@@ -2,6 +2,9 @@
 name = "options-analyzer"
 version = "0.1.0"
 description = "Options position analyzer with first and second-order Greeks, TastyTrade integration, and Bloomberg-themed visualization"
+authors = [
+    {name = "Jason Olinger", email = "jasonolinger@fastmail.com"},
+]
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",
