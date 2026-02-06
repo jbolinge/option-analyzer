@@ -43,4 +43,5 @@ Thumbs.db
 # Environment / Secrets
 .env
 .env.*
+!.env.example
 config/config.yaml

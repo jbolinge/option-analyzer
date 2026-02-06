@@ -1,0 +1,12 @@
+provider:
+  name: tastytrade
+  username: "${TASTYTRADE_USERNAME}"
+  password: "${TASTYTRADE_PASSWORD}"
+  is_paper: true
+
+engine:
+  risk_free_rate: 0.05
+  dividend_yield: 0.0
+
+visualization:
+  theme: bloomberg
