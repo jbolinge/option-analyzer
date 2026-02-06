@@ -2,7 +2,7 @@
 id: options-2
 title: "Project setup with uv and pyproject.toml"
 type: task
-status: open
+status: closed
 priority: 1
 created: 2026-02-05
 updated: 2026-02-05

@@ -2,7 +2,7 @@
 id: options-6
 title: "Domain Greeks models — FirstOrder, SecondOrder, Full, Position"
 type: task
-status: open
+status: closed
 priority: 1
 created: 2026-02-05
 updated: 2026-02-05

@@ -43,6 +43,3 @@ Thumbs.db
 .env
 .env.*
 config/config.yaml
-
-# Beads
-.beads/
