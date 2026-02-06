@@ -8,8 +8,8 @@ from pydantic import BaseModel, SecretStr
 
 class ProviderConfig(BaseModel):
     name: str = "tastytrade"
-    username: SecretStr
-    password: SecretStr
+    client_secret: SecretStr
+    refresh_token: SecretStr
     is_paper: bool = True
 
 

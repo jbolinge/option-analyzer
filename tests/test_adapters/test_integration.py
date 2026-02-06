@@ -1,6 +1,6 @@
 """Integration tests for TastyTrade adapter.
 
-These tests require real TastyTrade credentials and are skipped by default.
+These tests require real TastyTrade OAuth credentials and are skipped by default.
 Run with: uv run pytest -m integration
 """
 
@@ -24,14 +24,14 @@ pytestmark = pytest.mark.integration
 
 def _get_config() -> ProviderConfig:
     """Build config from environment variables, or skip."""
-    username = os.environ.get("TASTYTRADE_USERNAME")
-    password = os.environ.get("TASTYTRADE_PASSWORD")
-    if not username or not password:
-        pytest.skip("TASTYTRADE_USERNAME and TASTYTRADE_PASSWORD not set")
+    client_secret = os.environ.get("TASTYTRADE_CLIENT_SECRET")
+    refresh_token = os.environ.get("TASTYTRADE_REFRESH_TOKEN")
+    if not client_secret or not refresh_token:
+        pytest.skip("TASTYTRADE_CLIENT_SECRET and TASTYTRADE_REFRESH_TOKEN not set")
     return ProviderConfig(
         name="tastytrade",
-        username=SecretStr(username),
-        password=SecretStr(password),
+        client_secret=SecretStr(client_secret),
+        refresh_token=SecretStr(refresh_token),
         is_paper=True,
     )
 

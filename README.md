@@ -14,7 +14,7 @@ Options position analyzer with first and second-order Greeks, TastyTrade integra
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/) package manager
-- TastyTrade account (paper trading works)
+- TastyTrade OAuth application (create at https://developer.tastytrade.com)
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ uv sync --all-extras
 
 # Set up credentials
 cp .env.example .env
-# Edit .env with your TastyTrade username and password
+# Edit .env with your TastyTrade OAuth client secret and refresh token
 
 # Set up config
 cp config/config.yaml.example config/config.yaml

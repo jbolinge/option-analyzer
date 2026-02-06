@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from types import TracebackType
 
-from tastytrade import Session as ProductionSession
+from tastytrade import Session
 
 from options_analyzer.config.schema import ProviderConfig
 
@@ -18,10 +18,10 @@ class TastyTradeSession:
 
     def __init__(self, config: ProviderConfig) -> None:
         self._config = config
-        self._session: ProductionSession | None = None
+        self._session: Session | None = None
 
     @property
-    def session(self) -> ProductionSession:
+    def session(self) -> Session:
         """Access the underlying tastytrade Session. Raises if not connected."""
         if self._session is None:
             raise RuntimeError("Not connected. Call connect() first.")
@@ -29,9 +29,9 @@ class TastyTradeSession:
 
     async def connect(self) -> None:
         """Authenticate and create a session."""
-        self._session = ProductionSession(
-            self._config.username.get_secret_value(),
-            self._config.password.get_secret_value(),
+        self._session = Session(
+            self._config.client_secret.get_secret_value(),
+            self._config.refresh_token.get_secret_value(),
             is_test=self._config.is_paper,
         )
 

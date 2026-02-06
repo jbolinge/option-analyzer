@@ -13,8 +13,8 @@ from options_analyzer.config.schema import ProviderConfig
 def paper_config() -> ProviderConfig:
     return ProviderConfig(
         name="tastytrade",
-        username=SecretStr("test_provider_secret"),
-        password=SecretStr("test_refresh_token"),
+        client_secret=SecretStr("test_client_secret"),
+        refresh_token=SecretStr("test_refresh_token"),
         is_paper=True,
     )
 
@@ -23,8 +23,8 @@ def paper_config() -> ProviderConfig:
 def live_config() -> ProviderConfig:
     return ProviderConfig(
         name="tastytrade",
-        username=SecretStr("test_provider_secret"),
-        password=SecretStr("test_refresh_token"),
+        client_secret=SecretStr("test_client_secret"),
+        refresh_token=SecretStr("test_refresh_token"),
         is_paper=False,
     )
 
@@ -59,13 +59,13 @@ class TestTastyTradeSessionConnect:
     ) -> None:
         mock_session = MagicMock()
         with patch(
-            "options_analyzer.adapters.tastytrade.session.ProductionSession",
+            "options_analyzer.adapters.tastytrade.session.Session",
         ) as mock_cls:
             mock_cls.return_value = mock_session
             ts = TastyTradeSession(paper_config)
             await ts.connect()
             mock_cls.assert_called_once_with(
-                "test_provider_secret", "test_refresh_token", is_test=True
+                "test_client_secret", "test_refresh_token", is_test=True
             )
 
     @pytest.mark.asyncio
@@ -74,20 +74,20 @@ class TestTastyTradeSessionConnect:
     ) -> None:
         mock_session = MagicMock()
         with patch(
-            "options_analyzer.adapters.tastytrade.session.ProductionSession",
+            "options_analyzer.adapters.tastytrade.session.Session",
         ) as mock_cls:
             mock_cls.return_value = mock_session
             ts = TastyTradeSession(live_config)
             await ts.connect()
             mock_cls.assert_called_once_with(
-                "test_provider_secret", "test_refresh_token", is_test=False
+                "test_client_secret", "test_refresh_token", is_test=False
             )
 
     @pytest.mark.asyncio
     async def test_connect_stores_session(self, paper_config: ProviderConfig) -> None:
         mock_session = MagicMock()
         with patch(
-            "options_analyzer.adapters.tastytrade.session.ProductionSession",
+            "options_analyzer.adapters.tastytrade.session.Session",
         ) as mock_cls:
             mock_cls.return_value = mock_session
             ts = TastyTradeSession(paper_config)
@@ -103,7 +103,7 @@ class TestTastyTradeSessionDisconnect:
         mock_session = MagicMock()
         mock_session._client.aclose = AsyncMock()
         with patch(
-            "options_analyzer.adapters.tastytrade.session.ProductionSession",
+            "options_analyzer.adapters.tastytrade.session.Session",
         ) as mock_cls:
             mock_cls.return_value = mock_session
             ts = TastyTradeSession(paper_config)
@@ -128,7 +128,7 @@ class TestTastyTradeSessionContextManager:
         mock_session = MagicMock()
         mock_session._client.aclose = AsyncMock()
         with patch(
-            "options_analyzer.adapters.tastytrade.session.ProductionSession",
+            "options_analyzer.adapters.tastytrade.session.Session",
         ) as mock_cls:
             mock_cls.return_value = mock_session
             async with TastyTradeSession(paper_config) as ts:
