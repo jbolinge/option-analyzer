@@ -1,7 +1,7 @@
 provider:
   name: tastytrade
-  username: "${TASTYTRADE_USERNAME}"
-  password: "${TASTYTRADE_PASSWORD}"
+  client_secret: "${TASTYTRADE_CLIENT_SECRET}"
+  refresh_token: "${TASTYTRADE_REFRESH_TOKEN}"
   is_paper: true
 
 engine:

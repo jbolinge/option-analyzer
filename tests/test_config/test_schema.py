@@ -16,28 +16,28 @@ from options_analyzer.config.schema import (
 class TestProviderConfig:
     def test_creation(self) -> None:
         config = ProviderConfig(
-            username="user",  # type: ignore[arg-type]
-            password="pass",  # type: ignore[arg-type]
+            client_secret="secret",  # type: ignore[arg-type]
+            refresh_token="token",  # type: ignore[arg-type]
         )
         assert config.name == "tastytrade"
         assert config.is_paper is True
 
     def test_secret_str_masks_credentials(self) -> None:
         config = ProviderConfig(
-            username="myuser",  # type: ignore[arg-type]
-            password="mypass",  # type: ignore[arg-type]
+            client_secret="mysecret",  # type: ignore[arg-type]
+            refresh_token="mytoken",  # type: ignore[arg-type]
         )
         repr_str = repr(config)
-        assert "myuser" not in repr_str
-        assert "mypass" not in repr_str
+        assert "mysecret" not in repr_str
+        assert "mytoken" not in repr_str
 
     def test_secret_str_reveals_value(self) -> None:
         config = ProviderConfig(
-            username="myuser",  # type: ignore[arg-type]
-            password="mypass",  # type: ignore[arg-type]
+            client_secret="mysecret",  # type: ignore[arg-type]
+            refresh_token="mytoken",  # type: ignore[arg-type]
         )
-        assert config.username.get_secret_value() == "myuser"
-        assert config.password.get_secret_value() == "mypass"
+        assert config.client_secret.get_secret_value() == "mysecret"
+        assert config.refresh_token.get_secret_value() == "mytoken"
 
 
 class TestEngineConfig:
@@ -63,8 +63,8 @@ class TestAppConfig:
         yaml_content = """\
 provider:
   name: tastytrade
-  username: testuser
-  password: testpass
+  client_secret: testsecret
+  refresh_token: testtoken
   is_paper: true
 
 engine:
@@ -79,8 +79,8 @@ visualization:
 
         config = AppConfig.from_yaml(config_file)
         assert config.provider.name == "tastytrade"
-        assert config.provider.username.get_secret_value() == "testuser"
-        assert config.provider.password.get_secret_value() == "testpass"
+        assert config.provider.client_secret.get_secret_value() == "testsecret"
+        assert config.provider.refresh_token.get_secret_value() == "testtoken"
         assert config.provider.is_paper is True
         assert config.engine.risk_free_rate == 0.04
         assert config.engine.dividend_yield == 0.01
@@ -89,8 +89,8 @@ visualization:
     def test_from_yaml_with_defaults(self, tmp_path: Path) -> None:
         yaml_content = """\
 provider:
-  username: testuser
-  password: testpass
+  client_secret: testsecret
+  refresh_token: testtoken
 """
         config_file = tmp_path / "config.yaml"
         config_file.write_text(yaml_content)

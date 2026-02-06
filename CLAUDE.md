@@ -49,7 +49,7 @@ src/options_analyzer/
 │   ├── market_data.py         # MarketDataProvider ABC
 │   └── account.py             # AccountProvider ABC
 ├── adapters/tastytrade/
-│   ├── session.py             # Session lifecycle (paper vs live via is_test)
+│   ├── session.py             # OAuth session lifecycle (paper vs live via is_test)
 │   ├── mapping.py             # SDK ↔ domain models (ONLY file importing SDK types)
 │   ├── market_data.py         # TastyTradeMarketDataProvider
 │   ├── account.py             # TastyTradeAccountProvider
@@ -87,6 +87,7 @@ notebooks/
 - **OptionContract**: Immutable model for a single option (symbol, underlying, strike, expiration, type)
 - **Leg**: A contract + side (long/short) + quantity + open price
 - **Position**: Named collection of legs (e.g., "AAPL 150/160/170 BWB")
+- **ProviderConfig**: OAuth credentials (`client_secret`, `refresh_token`) stored as `SecretStr`
 - **FirstOrderGreeks**: delta, gamma, theta, vega, rho, iv — sourced from data provider
 - **SecondOrderGreeks**: vanna, volga, charm, veta, speed, color — computed via BSM engine
 - **BSM**: Black-Scholes-Merton analytical formulas implemented as pure functions
@@ -118,7 +119,7 @@ notebooks/
 # Run tests (skip integration)
 uv run pytest -m "not integration"
 
-# Run all tests including integration (requires TastyTrade credentials)
+# Run all tests including integration (requires TastyTrade OAuth credentials)
 uv run pytest -m integration
 
 # Run specific test file
@@ -144,8 +145,8 @@ Main config file: `config/config.yaml`
 ```yaml
 provider:
   name: tastytrade
-  username: "${TASTYTRADE_USERNAME}"
-  password: "${TASTYTRADE_PASSWORD}"
+  client_secret: "${TASTYTRADE_CLIENT_SECRET}"
+  refresh_token: "${TASTYTRADE_REFRESH_TOKEN}"
   is_paper: true
 
 engine:
@@ -156,7 +157,7 @@ visualization:
   theme: bloomberg
 ```
 
-Credentials use `pydantic.SecretStr` — never logged or displayed in repr.
+OAuth credentials (`client_secret`, `refresh_token`) use `pydantic.SecretStr` — never logged or displayed in repr. Obtain these from the TastyTrade developer portal: create an OAuth application for the client secret, then use "Create Grant" for the refresh token.
 
 ## Testing Strategy
 
