@@ -30,6 +30,7 @@ dev-dependencies = [
     "ruff",
     "mypy",
     "types-PyYAML",
+    "scipy-stubs>=1.17.0.2",
 ]
 
 [build-system]
@@ -43,6 +44,7 @@ packages = ["src/options_analyzer"]
 testpaths = ["tests"]
 markers = [
     "integration: marks tests requiring TastyTrade credentials (deselect with '-m \"not integration\"')",
+    "slow: marks slow tests like hypothesis property tests (deselect with '-m \"not slow\"')",
 ]
 
 [tool.mypy]

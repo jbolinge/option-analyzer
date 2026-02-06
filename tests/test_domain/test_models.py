@@ -1,6 +1,6 @@
 """Tests for domain models — OptionContract, Leg, Position."""
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -149,16 +149,31 @@ class TestPosition:
             for strike in [150, 160, 170]
         ]
         legs = [
-            Leg(contract=contracts[0], side=PositionSide.LONG, quantity=1, open_price=Decimal("12.00")),
-            Leg(contract=contracts[1], side=PositionSide.SHORT, quantity=2, open_price=Decimal("7.00")),
-            Leg(contract=contracts[2], side=PositionSide.LONG, quantity=1, open_price=Decimal("3.50")),
+            Leg(
+                contract=contracts[0],
+                side=PositionSide.LONG,
+                quantity=1,
+                open_price=Decimal("12.00"),
+            ),
+            Leg(
+                contract=contracts[1],
+                side=PositionSide.SHORT,
+                quantity=2,
+                open_price=Decimal("7.00"),
+            ),
+            Leg(
+                contract=contracts[2],
+                side=PositionSide.LONG,
+                quantity=1,
+                open_price=Decimal("3.50"),
+            ),
         ]
         return Position(
             id="pos-1",
             name="AAPL Jan 150/160/170 BWB",
             underlying="AAPL",
             legs=legs,
-            opened_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            opened_at=datetime(2024, 1, 1, tzinfo=UTC),
         )
 
     def test_creation(self, butterfly_position: Position) -> None:

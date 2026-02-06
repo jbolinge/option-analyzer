@@ -1,6 +1,5 @@
 """Tests for test object factories."""
 
-from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from options_analyzer.domain.enums import OptionType, PositionSide
