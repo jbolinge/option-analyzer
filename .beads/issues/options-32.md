@@ -2,10 +2,11 @@
 id: options-32
 title: "Jupyter Notebooks"
 type: epic
-status: open
+status: closed
 priority: 5
 created: 2026-02-05
-updated: 2026-02-05
+updated: 2026-02-06
+closed: 2026-02-06
 depends-on: options-25, options-17
 ---
 

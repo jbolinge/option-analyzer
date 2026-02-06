@@ -2,10 +2,11 @@
 id: options-35
 title: "Notebook 03 — Greeks Dashboard (Live Streaming)"
 type: task
-status: open
+status: closed
 priority: 5
 created: 2026-02-05
-updated: 2026-02-05
+updated: 2026-02-06
+closed: 2026-02-06
 parent: options-32
 depends-on: options-23, options-28, options-29
 ---
