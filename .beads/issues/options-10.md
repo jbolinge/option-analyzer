@@ -7,7 +7,7 @@ priority: 2
 created: 2026-02-05
 updated: 2026-02-05
 parent: options-9
-depends-on: options-6
+depends-on: options-2
 ---
 
 # BSM pure functions — d1, d2, first-order Greeks

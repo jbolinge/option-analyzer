@@ -7,7 +7,7 @@ priority: 2
 created: 2026-02-05
 updated: 2026-02-05
 parent: options-9
-depends-on: options-5, options-11
+depends-on: options-5, options-7, options-10
 ---
 
 # PayoffCalculator — expiration P&L, theoretical P&L, surfaces

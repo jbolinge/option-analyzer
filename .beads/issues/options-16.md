@@ -7,7 +7,7 @@ priority: 2
 created: 2026-02-05
 updated: 2026-02-05
 parent: options-9
-depends-on: options-14, options-15
+depends-on: options-7, options-14, options-15
 ---
 
 # PositionAnalyzer — aggregate Greeks, risk profiles
