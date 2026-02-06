@@ -2,7 +2,7 @@
 id: options-17
 title: "Data Layer — Ports & TastyTrade Adapter"
 type: epic
-status: open
+status: closed
 priority: 3
 created: 2026-02-05
 updated: 2026-02-05

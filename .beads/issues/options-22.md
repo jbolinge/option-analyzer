@@ -2,7 +2,7 @@
 id: options-22
 title: "TastyTrade account provider"
 type: task
-status: open
+status: closed
 priority: 3
 created: 2026-02-05
 updated: 2026-02-05
