@@ -2,10 +2,11 @@
 id: options-29
 title: "Decay charts — theta, charm, veta over time"
 type: task
-status: open
+status: closed
 priority: 4
 created: 2026-02-05
-updated: 2026-02-05
+updated: 2026-02-06
+closed: 2026-02-06
 parent: options-25
 depends-on: options-16, options-26
 ---
