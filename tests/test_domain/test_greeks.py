@@ -42,7 +42,12 @@ class TestFirstOrderGreeks:
 class TestSecondOrderGreeks:
     def test_creation(self) -> None:
         greeks = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         assert greeks.vanna == 0.01
         assert greeks.volga == 0.02
@@ -53,14 +58,24 @@ class TestSecondOrderGreeks:
 
     def test_frozen(self) -> None:
         greeks = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         with pytest.raises(ValidationError):
             greeks.vanna = 0.5  # type: ignore[misc]
 
     def test_serialization_roundtrip(self) -> None:
         greeks = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         data = greeks.model_dump()
         restored = SecondOrderGreeks.model_validate(data)
@@ -73,7 +88,12 @@ class TestFullGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
         assert full.first_order == first
@@ -84,7 +104,12 @@ class TestFullGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
         with pytest.raises(ValidationError):
@@ -95,7 +120,12 @@ class TestFullGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
         data = full.model_dump()
@@ -109,7 +139,12 @@ class TestPositionGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
 
@@ -126,7 +161,12 @@ class TestPositionGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
         pos_greeks = PositionGreeks(per_leg={}, aggregated=full)
@@ -138,7 +178,12 @@ class TestPositionGreeks:
             delta=0.55, gamma=0.05, theta=-0.03, vega=0.20, rho=0.01, iv=0.25
         )
         second = SecondOrderGreeks(
-            vanna=0.01, volga=0.02, charm=-0.001, veta=-0.005, speed=0.0001, color=-0.0001
+            vanna=0.01,
+            volga=0.02,
+            charm=-0.001,
+            veta=-0.005,
+            speed=0.0001,
+            color=-0.0001,
         )
         full = FullGreeks(first_order=first, second_order=second)
         pos_greeks = PositionGreeks(

@@ -1,6 +1,6 @@
 """Reusable test object factory functions for all domain models."""
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -47,7 +47,7 @@ def make_position(**overrides: Any) -> Position:
         "name": "Test Position",
         "underlying": "AAPL",
         "legs": [make_leg()],
-        "opened_at": datetime(2024, 1, 1, tzinfo=timezone.utc),
+        "opened_at": datetime(2024, 1, 1, tzinfo=UTC),
     }
     defaults.update(overrides)
     return Position(**defaults)
@@ -129,7 +129,7 @@ def make_vertical_spread(
         name=f"{underlying} {strikes[0]}/{strikes[1]} Vertical",
         underlying=underlying,
         legs=legs,
-        opened_at=datetime.now(tz=timezone.utc),
+        opened_at=datetime.now(tz=UTC),
     )
 
 
@@ -183,7 +183,7 @@ def make_butterfly(
         name=f"{underlying} {strikes[0]}/{strikes[1]}/{strikes[2]} Butterfly",
         underlying=underlying,
         legs=legs,
-        opened_at=datetime.now(tz=timezone.utc),
+        opened_at=datetime.now(tz=UTC),
     )
 
 
@@ -251,5 +251,5 @@ def make_iron_condor(
         name=f"{underlying} {strikes[0]}/{strikes[1]}/{strikes[2]}/{strikes[3]} IC",
         underlying=underlying,
         legs=legs,
-        opened_at=datetime.now(tz=timezone.utc),
+        opened_at=datetime.now(tz=UTC),
     )
