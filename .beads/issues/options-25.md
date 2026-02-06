@@ -2,10 +2,11 @@
 id: options-25
 title: "Visualization — Bloomberg Theme"
 type: epic
-status: open
+status: closed
 priority: 4
 created: 2026-02-05
-updated: 2026-02-05
+updated: 2026-02-06
+closed: 2026-02-06
 depends-on: options-9
 ---
 

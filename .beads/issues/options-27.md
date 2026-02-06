@@ -2,10 +2,11 @@
 id: options-27
 title: "Payoff charts — P&L diagrams + 3D surface"
 type: task
-status: open
+status: closed
 priority: 4
 created: 2026-02-05
-updated: 2026-02-05
+updated: 2026-02-06
+closed: 2026-02-06
 parent: options-25
 depends-on: options-15, options-26
 ---
