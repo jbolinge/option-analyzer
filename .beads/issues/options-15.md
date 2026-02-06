@@ -2,7 +2,7 @@
 id: options-15
 title: "PayoffCalculator — expiration P&L, theoretical P&L, surfaces"
 type: task
-status: open
+status: closed
 priority: 2
 created: 2026-02-05
 updated: 2026-02-05

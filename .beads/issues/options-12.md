@@ -2,7 +2,7 @@
 id: options-12
 title: "BSM comprehensive test suite — known values + finite-difference"
 type: task
-status: open
+status: closed
 priority: 2
 created: 2026-02-05
 updated: 2026-02-05

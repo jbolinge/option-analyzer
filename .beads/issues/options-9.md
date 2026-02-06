@@ -2,7 +2,7 @@
 id: options-9
 title: "BSM Engine & Computation"
 type: epic
-status: open
+status: closed
 priority: 2
 created: 2026-02-05
 updated: 2026-02-05
