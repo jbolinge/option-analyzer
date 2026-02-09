@@ -40,7 +40,8 @@ Engine + Visualization depend only on Domain. Adapters implement Ports. Presenta
 ```
 src/options_analyzer/
 ├── config/
-│   └── schema.py              # AppConfig, ProviderConfig (Pydantic v2, SecretStr)
+│   ├── schema.py              # AppConfig, ProviderConfig (Pydantic v2, SecretStr)
+│   └── loader.py              # load_config() with .env + YAML ${VAR} interpolation
 ├── domain/
 │   ├── enums.py               # OptionType, PositionSide, ExerciseStyle
 │   ├── models.py              # OptionContract, Leg, Position
@@ -140,7 +141,28 @@ uv run jupyter lab
 
 ## Configuration
 
-Main config file: `config/config.yaml`
+Use `load_config()` to load configuration — it handles `.env` loading, YAML parsing, and env var interpolation in one call:
+
+```python
+from options_analyzer.config import load_config
+config = load_config()
+```
+
+`load_config()` auto-discovers paths relative to the project root (nearest `pyproject.toml`):
+1. Loads `.env` from project root (if present, does not override existing env vars)
+2. Reads `config/config.yaml`
+3. Resolves `${VAR}` placeholders from `os.environ`
+4. Returns a validated `AppConfig`
+
+You can also pass explicit paths: `load_config(config_path=..., env_path=...)`.
+
+### Credentials setup
+
+1. Copy `.env.example` to `.env` at the project root
+2. Fill in your OAuth credentials (obtain from TastyTrade developer portal)
+3. Credentials use `pydantic.SecretStr` — never logged or displayed in repr
+
+### Config file: `config/config.yaml`
 
 ```yaml
 provider:
@@ -156,8 +178,6 @@ engine:
 visualization:
   theme: bloomberg
 ```
-
-OAuth credentials (`client_secret`, `refresh_token`) use `pydantic.SecretStr` — never logged or displayed in repr. Obtain these from the TastyTrade developer portal: create an OAuth application for the client secret, then use "Create Grant" for the refresh token.
 
 ## Testing Strategy
 
@@ -177,6 +197,7 @@ OAuth credentials (`client_secret`, `refresh_token`) use `pydantic.SecretStr` �
 - plotly>=5.18
 - pyyaml>=6.0
 - tastytrade>=11.1
+- python-dotenv>=1.0
 
 ### Dev
 - pytest>=8.0
