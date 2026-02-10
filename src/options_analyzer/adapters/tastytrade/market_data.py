@@ -30,6 +30,7 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
 
     def __init__(self, session: TastyTradeSession) -> None:
         self._session = session
+        self._streamer_symbols: dict[str, str] = {}
 
     async def connect(self) -> None:
         await self._session.connect()
@@ -43,8 +44,24 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         sdk_chain = await get_option_chain(self._session.session, underlying)
         result: dict[date, list[OptionContract]] = {}
         for exp_date, options in sdk_chain.items():
-            result[exp_date] = [map_option_to_contract(opt) for opt in options]
+            mapped = []
+            for opt in options:
+                contract = map_option_to_contract(opt)
+                if opt.streamer_symbol:
+                    self._streamer_symbols[contract.symbol] = opt.streamer_symbol
+                mapped.append(contract)
+            result[exp_date] = mapped
         return result
+
+    def get_streamer_symbols(
+        self, contracts: list[OptionContract]
+    ) -> list[str]:
+        """Resolve contracts to their provider-specific streaming identifiers."""
+        return [
+            self._streamer_symbols[c.symbol]
+            for c in contracts
+            if c.symbol in self._streamer_symbols
+        ]
 
     async def get_underlying_price(self, symbol: str) -> Decimal:
         data = await get_market_data(
@@ -59,14 +76,20 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
     async def stream_greeks(
         self, contracts: list[OptionContract]
     ) -> AsyncIterator[tuple[str, FirstOrderGreeks]]:
-        symbols = [c.streamer_symbol for c in contracts if c.streamer_symbol]
+        symbols = self.get_streamer_symbols(contracts)
+        # Reverse map: streamer_symbol -> canonical contract.symbol
+        reverse_map = {
+            self._streamer_symbols[c.symbol]: c.symbol
+            for c in contracts
+            if c.symbol in self._streamer_symbols
+        }
         async with DXLinkStreamer(self._session.session) as streamer:
             await streamer.subscribe(Greeks, symbols)
             async for greeks_event in streamer.listen(Greeks):
-                yield (
-                    greeks_event.event_symbol,
-                    map_greeks_to_first_order(greeks_event),
+                canonical = reverse_map.get(
+                    greeks_event.event_symbol, greeks_event.event_symbol
                 )
+                yield (canonical, map_greeks_to_first_order(greeks_event))
 
     async def stream_quotes(
         self, symbols: list[str]

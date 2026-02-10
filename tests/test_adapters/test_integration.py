@@ -103,13 +103,11 @@ class TestStreamingIntegration:
     async def test_stream_greeks_receives_update(
         self, tt_session: TastyTradeSession
     ) -> None:
-        # Get a valid streamer symbol first
+        # Get valid streamer symbols via provider registry
         provider = TastyTradeMarketDataProvider(tt_session)
         chain = await provider.get_option_chain("SPY")
         first_exp = next(iter(chain.values()))
-        symbols = [
-            c.streamer_symbol for c in first_exp[:2] if c.streamer_symbol
-        ]
+        symbols = provider.get_streamer_symbols(first_exp[:2])
         assert len(symbols) > 0
 
         wrapper = DXLinkStreamerWrapper(tt_session)
