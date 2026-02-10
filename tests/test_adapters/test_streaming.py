@@ -7,12 +7,9 @@ import pytest
 from tastytrade.dxfeed import Greeks, Quote
 
 from options_analyzer.adapters.tastytrade.session import TastyTradeSession
-from options_analyzer.adapters.tastytrade.streaming import (
-    DXLinkStreamerWrapper,
-    GreeksUpdate,
-    QuoteUpdate,
-)
+from options_analyzer.adapters.tastytrade.streaming import DXLinkStreamerWrapper
 from options_analyzer.domain.greeks import FirstOrderGreeks
+from options_analyzer.domain.streaming import GreeksUpdate, QuoteUpdate
 
 
 @pytest.fixture

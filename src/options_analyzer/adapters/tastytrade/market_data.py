@@ -19,6 +19,7 @@ from options_analyzer.adapters.tastytrade.mapping import (
 )
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
+from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
 from options_analyzer.ports.market_data import MarketDataProvider
 
 if TYPE_CHECKING:
@@ -98,3 +99,35 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             await streamer.subscribe(Quote, symbols)
             async for quote in streamer.listen(Quote):
                 yield (quote.event_symbol, quote.bid_price, quote.ask_price)
+
+    async def stream_greeks_and_quotes(
+        self,
+        contracts: list[OptionContract],
+        quote_symbols: list[str],
+    ) -> AsyncIterator[StreamUpdate]:
+        """Stream combined Greeks + Quotes, translating to canonical symbols."""
+        from options_analyzer.adapters.tastytrade.streaming import (
+            DXLinkStreamerWrapper,
+        )
+
+        greeks_symbols = self.get_streamer_symbols(contracts)
+        # Reverse map: streamer_symbol -> canonical contract.symbol
+        reverse_map = {
+            self._streamer_symbols[c.symbol]: c.symbol
+            for c in contracts
+            if c.symbol in self._streamer_symbols
+        }
+        wrapper = DXLinkStreamerWrapper(self._session)
+        all_quote_symbols = quote_symbols + greeks_symbols
+        async for update in wrapper.subscribe_greeks_and_quotes(
+            greeks_symbols, all_quote_symbols
+        ):
+            if isinstance(update, GreeksUpdate):
+                canonical = reverse_map.get(
+                    update.event_symbol, update.event_symbol
+                )
+                yield GreeksUpdate(
+                    event_symbol=canonical, greeks=update.greeks
+                )
+            else:
+                yield update

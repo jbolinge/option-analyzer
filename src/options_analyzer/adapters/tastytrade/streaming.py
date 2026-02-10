@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -13,29 +12,14 @@ from tastytrade.dxfeed import Greeks, Quote
 
 from options_analyzer.adapters.tastytrade.mapping import map_greeks_to_first_order
 from options_analyzer.domain.greeks import FirstOrderGreeks
+from options_analyzer.domain.streaming import (
+    GreeksUpdate,
+    QuoteUpdate,
+    StreamUpdate,
+)
 
 if TYPE_CHECKING:
     from options_analyzer.adapters.tastytrade.session import TastyTradeSession
-
-
-@dataclass(frozen=True)
-class GreeksUpdate:
-    """Tagged wrapper for a Greeks streaming event."""
-
-    event_symbol: str
-    greeks: FirstOrderGreeks
-
-
-@dataclass(frozen=True)
-class QuoteUpdate:
-    """Tagged wrapper for a Quote streaming event."""
-
-    event_symbol: str
-    bid_price: Decimal
-    ask_price: Decimal
-
-
-StreamUpdate = GreeksUpdate | QuoteUpdate
 
 
 class DXLinkStreamerWrapper:

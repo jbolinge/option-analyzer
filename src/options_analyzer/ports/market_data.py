@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
+from options_analyzer.domain.streaming import StreamUpdate
 
 
 class MarketDataProvider(ABC):
@@ -35,3 +36,10 @@ class MarketDataProvider(ABC):
     def stream_quotes(
         self, symbols: list[str]
     ) -> AsyncIterator[tuple[str, Decimal, Decimal]]: ...
+
+    @abstractmethod
+    def stream_greeks_and_quotes(
+        self,
+        contracts: list[OptionContract],
+        quote_symbols: list[str],
+    ) -> AsyncIterator[StreamUpdate]: ...
