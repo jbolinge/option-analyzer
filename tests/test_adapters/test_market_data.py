@@ -96,23 +96,55 @@ class TestGetOptionChain:
 
 class TestGetUnderlyingPrice:
     @pytest.mark.asyncio
-    async def test_returns_mid_price(self, mock_session: MagicMock) -> None:
-        mock_quote = MagicMock()
-        mock_quote.bid_price = Decimal("450.10")
-        mock_quote.ask_price = Decimal("450.20")
-
-        mock_streamer = AsyncMock()
-        mock_streamer.get_event = AsyncMock(return_value=mock_quote)
-        mock_streamer.__aenter__ = AsyncMock(return_value=mock_streamer)
-        mock_streamer.__aexit__ = AsyncMock(return_value=False)
+    async def test_returns_mid_when_available(self, mock_session: MagicMock) -> None:
+        mock_data = MagicMock()
+        mock_data.mid = Decimal("450.15")
+        mock_data.bid = Decimal("450.10")
+        mock_data.ask = Decimal("450.20")
+        mock_data.mark = Decimal("450.12")
 
         with patch(
-            "options_analyzer.adapters.tastytrade.market_data.DXLinkStreamer",
-            return_value=mock_streamer,
+            "options_analyzer.adapters.tastytrade.market_data.get_market_data",
+            new_callable=AsyncMock,
+            return_value=mock_data,
         ):
             provider = TastyTradeMarketDataProvider(mock_session)
             result = await provider.get_underlying_price("SPY")
             assert result == Decimal("450.15")
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_bid_ask_avg(self, mock_session: MagicMock) -> None:
+        mock_data = MagicMock()
+        mock_data.mid = None
+        mock_data.bid = Decimal("450.10")
+        mock_data.ask = Decimal("450.20")
+        mock_data.mark = Decimal("450.12")
+
+        with patch(
+            "options_analyzer.adapters.tastytrade.market_data.get_market_data",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_underlying_price("SPY")
+            assert result == Decimal("450.15")
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_mark(self, mock_session: MagicMock) -> None:
+        mock_data = MagicMock()
+        mock_data.mid = None
+        mock_data.bid = None
+        mock_data.ask = None
+        mock_data.mark = Decimal("450.12")
+
+        with patch(
+            "options_analyzer.adapters.tastytrade.market_data.get_market_data",
+            new_callable=AsyncMock,
+            return_value=mock_data,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_underlying_price("SPY")
+            assert result == Decimal("450.12")
 
 
 class TestConnectDisconnect:

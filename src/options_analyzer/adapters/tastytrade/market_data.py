@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 from tastytrade import DXLinkStreamer
 from tastytrade.dxfeed import Greeks, Quote
 from tastytrade.instruments import get_option_chain
+from tastytrade.market_data import get_market_data
+from tastytrade.order import InstrumentType
 
 from options_analyzer.adapters.tastytrade.mapping import (
     map_greeks_to_first_order,
@@ -45,10 +47,14 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         return result
 
     async def get_underlying_price(self, symbol: str) -> Decimal:
-        async with DXLinkStreamer(self._session.session) as streamer:
-            await streamer.subscribe(Quote, [symbol])
-            quote = await streamer.get_event(Quote)
-            return (quote.bid_price + quote.ask_price) / 2
+        data = await get_market_data(
+            self._session.session, symbol, InstrumentType.EQUITY
+        )
+        if data.mid is not None:
+            return data.mid
+        if data.bid is not None and data.ask is not None:
+            return (data.bid + data.ask) / 2
+        return data.mark
 
     async def stream_greeks(
         self, contracts: list[OptionContract]
