@@ -8,6 +8,7 @@ import asyncio
 import os
 
 import pytest
+import pytest_asyncio
 from pydantic import SecretStr
 
 from options_analyzer.adapters.tastytrade.account import TastyTradeAccountProvider
@@ -36,7 +37,7 @@ def _get_config() -> ProviderConfig:
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def tt_session() -> TastyTradeSession:
     config = _get_config()
     session = TastyTradeSession(config)
