@@ -21,6 +21,7 @@ dependencies = [
 jupyter = [
     "jupyterlab>=4.0",
     "ipywidgets>=8.0",
+    "anywidget>=0.9",
 ]
 
 [tool.uv]
