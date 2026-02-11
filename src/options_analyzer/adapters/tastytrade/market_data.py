@@ -64,6 +64,18 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             if c.symbol in self._streamer_symbols
         ]
 
+    async def _ensure_streamer_symbols(
+        self, contracts: list[OptionContract]
+    ) -> None:
+        """Populate streamer symbol cache for any contracts not yet resolved."""
+        missing_underlyings = {
+            c.underlying
+            for c in contracts
+            if c.symbol not in self._streamer_symbols
+        }
+        for underlying in missing_underlyings:
+            await self.get_option_chain(underlying)
+
     async def get_underlying_price(self, symbol: str) -> Decimal:
         data = await get_market_data(
             self._session.session, symbol, InstrumentType.EQUITY
@@ -77,6 +89,7 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
     async def stream_greeks(
         self, contracts: list[OptionContract]
     ) -> AsyncIterator[tuple[str, FirstOrderGreeks]]:
+        await self._ensure_streamer_symbols(contracts)
         symbols = self.get_streamer_symbols(contracts)
         # Reverse map: streamer_symbol -> canonical contract.symbol
         reverse_map = {
@@ -110,6 +123,7 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             DXLinkStreamerWrapper,
         )
 
+        await self._ensure_streamer_symbols(contracts)
         greeks_symbols = self.get_streamer_symbols(contracts)
         # Reverse map: streamer_symbol -> canonical contract.symbol
         reverse_map = {
