@@ -35,7 +35,6 @@ class TestOptionContract:
         )
         assert contract.exercise_style == ExerciseStyle.AMERICAN
         assert contract.multiplier == 100
-        assert contract.streamer_symbol is None
 
     def test_frozen(self) -> None:
         contract = OptionContract(

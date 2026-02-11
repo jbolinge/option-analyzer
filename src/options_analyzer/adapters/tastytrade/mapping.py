@@ -35,7 +35,6 @@ def map_option_to_contract(option: Option | Any) -> OptionContract:
         expiration=option.expiration_date,
         exercise_style=exercise_style,
         multiplier=option.shares_per_contract,
-        streamer_symbol=option.streamer_symbol,
     )
 
 

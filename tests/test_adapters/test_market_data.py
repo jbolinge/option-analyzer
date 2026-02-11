@@ -83,6 +83,40 @@ class TestGetOptionChain:
             assert contracts[1].option_type == OptionType.PUT
 
     @pytest.mark.asyncio
+    async def test_populates_streamer_symbol_registry(
+        self, mock_session: MagicMock
+    ) -> None:
+        exp_date = date(2026, 2, 20)
+        sdk_options = [
+            _make_sdk_option(
+                symbol="SPY  260220C00450000",
+                strike=Decimal("450"),
+                streamer_symbol=".SPY260220C450",
+            ),
+            _make_sdk_option(
+                symbol="SPY  260220P00450000",
+                option_type_value="P",
+                strike=Decimal("450"),
+                streamer_symbol=".SPY260220P450",
+            ),
+        ]
+        sdk_chain = {exp_date: sdk_options}
+
+        with patch(
+            "options_analyzer.adapters.tastytrade.market_data.get_option_chain",
+            new_callable=AsyncMock,
+            return_value=sdk_chain,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_option_chain("SPY")
+
+            contracts = result[exp_date]
+            streamer_symbols = provider.get_streamer_symbols(contracts)
+            assert ".SPY260220C450" in streamer_symbols
+            assert ".SPY260220P450" in streamer_symbols
+            assert len(streamer_symbols) == 2
+
+    @pytest.mark.asyncio
     async def test_returns_empty_chain(self, mock_session: MagicMock) -> None:
         with patch(
             "options_analyzer.adapters.tastytrade.market_data.get_option_chain",

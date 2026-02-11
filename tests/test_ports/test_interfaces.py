@@ -10,6 +10,7 @@ import pytest
 
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import Leg, OptionContract
+from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
 from options_analyzer.ports.account import AccountProvider
 from options_analyzer.ports.market_data import MarketDataProvider
 
@@ -60,6 +61,16 @@ class TestMarketDataProviderABC:
             ) -> AsyncIterator[tuple[str, Decimal, Decimal]]:
                 yield ("", Decimal("0"), Decimal("0"))  # type: ignore[misc]
 
+            async def stream_greeks_and_quotes(
+                self,
+                contracts: list[OptionContract],
+                quote_symbols: list[str],
+            ) -> AsyncIterator[StreamUpdate]:
+                greeks = FirstOrderGreeks(
+                    delta=0, gamma=0, theta=0, vega=0, rho=0, iv=0
+                )
+                yield GreeksUpdate(event_symbol="", greeks=greeks)  # type: ignore[misc]
+
         provider = ConcreteProvider()
         assert isinstance(provider, MarketDataProvider)
 
@@ -71,6 +82,7 @@ class TestMarketDataProviderABC:
             "get_underlying_price",
             "stream_greeks",
             "stream_quotes",
+            "stream_greeks_and_quotes",
         }
         assert expected == set(MarketDataProvider.__abstractmethods__)
 

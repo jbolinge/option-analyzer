@@ -79,7 +79,6 @@ class TestMapOptionToContract:
         assert contract.expiration == date(2026, 2, 20)
         assert contract.exercise_style == ExerciseStyle.AMERICAN
         assert contract.multiplier == 100
-        assert contract.streamer_symbol == ".AAPL260220C150"
 
     def test_maps_put_option(self) -> None:
         sdk_option = _make_sdk_option(

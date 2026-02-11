@@ -20,7 +20,6 @@ class OptionContract(BaseModel):
     expiration: date
     exercise_style: ExerciseStyle = ExerciseStyle.AMERICAN
     multiplier: int = 100
-    streamer_symbol: str | None = None
 
 
 class Leg(BaseModel):
