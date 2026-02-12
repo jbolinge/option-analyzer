@@ -4,7 +4,16 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from options_analyzer.visualization.theme import _GRID_COLOR, PALETTE, apply_theme
+from options_analyzer.visualization.theme import (
+    COLOR_CYCLE,
+    GRID_COLOR,
+    LINE_WIDTH,
+    OVERLAY_DASH,
+    PALETTE,
+    REFERENCE_DASH,
+    REFERENCE_LINE_WIDTH,
+    apply_theme,
+)
 
 
 def plot_theta_decay(
@@ -21,7 +30,7 @@ def plot_theta_decay(
             y=theta,
             mode="lines",
             name="Theta",
-            line=dict(color=PALETTE["negative"], width=2),
+            line=dict(color=PALETTE["negative"], width=LINE_WIDTH),
         )
     )
 
@@ -52,7 +61,7 @@ def plot_decay_profiles(
                 y=values,
                 mode="lines",
                 name=label.capitalize(),
-                line=dict(color=color, width=2),
+                line=dict(color=color, width=LINE_WIDTH),
             )
         )
 
@@ -64,15 +73,6 @@ def plot_decay_profiles(
     )
 
     return apply_theme(fig)
-
-
-_DELTA_COLORS = [
-    PALETTE["secondary"],   # cyan
-    PALETTE["tertiary"],    # magenta
-    PALETTE["positive"],    # green
-    PALETTE["negative"],    # red
-    PALETTE["neutral"],     # gray
-]
 
 
 def plot_payoff_with_delta(
@@ -94,21 +94,21 @@ def plot_payoff_with_delta(
             y=payoff,
             mode="lines",
             name="P&L at Expiration",
-            line=dict(color=PALETTE["primary"], width=2),
+            line=dict(color=PALETTE["primary"], width=LINE_WIDTH),
         ),
         secondary_y=False,
     )
 
     # Delta curves on secondary axis
     for i, (label, deltas) in enumerate(delta_by_dte.items()):
-        color = _DELTA_COLORS[i % len(_DELTA_COLORS)]
+        color = COLOR_CYCLE[(i + 1) % len(COLOR_CYCLE)]
         fig.add_trace(
             go.Scatter(
                 x=price_range,
                 y=deltas,
                 mode="lines",
                 name=label,
-                line=dict(color=color, width=2, dash="dot"),
+                line=dict(color=color, width=LINE_WIDTH, dash=OVERLAY_DASH),
             ),
             secondary_y=True,
         )
@@ -121,7 +121,9 @@ def plot_payoff_with_delta(
         y0=0,
         y1=0,
         yref="y",
-        line=dict(color=PALETTE["neutral"], width=1, dash="dash"),
+        line=dict(
+            color=PALETTE["neutral"], width=REFERENCE_LINE_WIDTH, dash=REFERENCE_DASH
+        ),
     )
 
     fig.update_layout(
@@ -132,8 +134,8 @@ def plot_payoff_with_delta(
     fig.update_yaxes(
         title_text="Delta",
         secondary_y=True,
-        gridcolor=_GRID_COLOR,
-        zerolinecolor=_GRID_COLOR,
+        gridcolor=GRID_COLOR,
+        zerolinecolor=GRID_COLOR,
     )
 
     return apply_theme(fig)

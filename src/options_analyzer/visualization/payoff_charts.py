@@ -3,7 +3,16 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from options_analyzer.visualization.theme import PALETTE, apply_theme
+from options_analyzer.visualization.theme import (
+    LINE_WIDTH,
+    MARKER_SIZE,
+    MARKER_SYMBOL,
+    PALETTE,
+    REFERENCE_DASH,
+    REFERENCE_LINE_WIDTH,
+    SURFACE_COLORSCALE,
+    apply_theme,
+)
 
 
 def plot_expiration_payoff(
@@ -21,7 +30,7 @@ def plot_expiration_payoff(
             y=payoff,
             mode="lines",
             name="P&L",
-            line=dict(color=PALETTE["primary"], width=2),
+            line=dict(color=PALETTE["primary"], width=LINE_WIDTH),
         )
     )
 
@@ -33,7 +42,7 @@ def plot_expiration_payoff(
                 mode="markers",
                 name="Breakeven",
                 marker=dict(
-                    color=PALETTE["secondary"], size=10, symbol="diamond"
+                    color=PALETTE["secondary"], size=MARKER_SIZE, symbol=MARKER_SYMBOL
                 ),
             )
         )
@@ -44,7 +53,9 @@ def plot_expiration_payoff(
         x1=float(price_range[-1]),
         y0=0,
         y1=0,
-        line=dict(color=PALETTE["neutral"], width=1, dash="dash"),
+        line=dict(
+            color=PALETTE["neutral"], width=REFERENCE_LINE_WIDTH, dash=REFERENCE_DASH
+        ),
     )
 
     fig.update_layout(
@@ -71,7 +82,7 @@ def plot_theoretical_pnl(
                 y=pnl,
                 mode="lines",
                 name=label,
-                line=dict(width=2),
+                line=dict(width=LINE_WIDTH),
             )
         )
 
@@ -97,7 +108,7 @@ def plot_pnl_surface(
                 x=price_range,
                 y=dte_range,
                 z=surface,
-                colorscale="Plasma",
+                colorscale=SURFACE_COLORSCALE,
             )
         ]
     )

@@ -4,7 +4,12 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from options_analyzer.visualization.theme import PALETTE, apply_theme
+from options_analyzer.visualization.theme import (
+    COLOR_CYCLE,
+    LINE_WIDTH,
+    PALETTE,
+    apply_theme,
+)
 
 _GREEK_LABELS = {"delta": "Delta", "gamma": "Gamma", "theta": "Theta", "vega": "Vega"}
 
@@ -21,12 +26,7 @@ def plot_greeks_vs_price(
         subplot_titles=("Delta", "Gamma", "Theta", "Vega"),
     )
 
-    colors = [
-        PALETTE["primary"],
-        PALETTE["secondary"],
-        PALETTE["tertiary"],
-        PALETTE["positive"],
-    ]
+    colors = COLOR_CYCLE[:4]
     positions = [(1, 1), (1, 2), (2, 1), (2, 2)]
 
     for (greek_key, label), color, (row, col) in zip(
@@ -38,7 +38,7 @@ def plot_greeks_vs_price(
                 y=greeks[greek_key],
                 mode="lines",
                 name=label,
-                line=dict(color=color, width=2),
+                line=dict(color=color, width=LINE_WIDTH),
             ),
             row=row,
             col=col,
@@ -97,7 +97,7 @@ def plot_per_leg_greeks(
                 y=leg_greeks[greek_name],
                 mode="lines",
                 name=leg_label,
-                line=dict(width=2),
+                line=dict(width=LINE_WIDTH),
             )
         )
 

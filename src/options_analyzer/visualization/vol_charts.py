@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from options_analyzer.visualization.theme import PALETTE, apply_theme
+from options_analyzer.visualization.theme import LINE_WIDTH, PALETTE, apply_theme
 
 
 def plot_vanna_profile(
@@ -21,7 +21,7 @@ def plot_vanna_profile(
             y=vanna,
             mode="lines",
             name="Vanna",
-            line=dict(color=PALETTE["secondary"], width=2),
+            line=dict(color=PALETTE["secondary"], width=LINE_WIDTH),
         )
     )
 
@@ -48,7 +48,7 @@ def plot_volga_profile(
             y=volga,
             mode="lines",
             name="Volga",
-            line=dict(color=PALETTE["tertiary"], width=2),
+            line=dict(color=PALETTE["tertiary"], width=LINE_WIDTH),
         )
     )
 
@@ -84,7 +84,7 @@ def plot_vol_sensitivity(
                 y=values,
                 mode="lines",
                 name=label.capitalize(),
-                line=dict(color=color, width=2),
+                line=dict(color=color, width=LINE_WIDTH),
             ),
             row=i,
             col=1,

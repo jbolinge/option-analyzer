@@ -3,7 +3,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from options_analyzer.visualization.theme import apply_theme
+from options_analyzer.visualization.theme import SURFACE_COLORSCALE, apply_theme
 
 
 def plot_greek_surface(
@@ -22,7 +22,7 @@ def plot_greek_surface(
                 x=x_range,
                 y=y_range,
                 z=z_surface,
-                colorscale="Plasma",
+                colorscale=SURFACE_COLORSCALE,
             )
         ]
     )

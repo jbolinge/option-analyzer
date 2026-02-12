@@ -14,7 +14,25 @@ PALETTE: dict[str, str] = {
 
 _FONT_FAMILY = "Consolas, Monaco, 'Courier New', monospace"
 _TEXT_COLOR = "#e0e0e0"
-_GRID_COLOR = "#2d2d44"
+
+GRID_COLOR = "#2d2d44"
+
+LINE_WIDTH = 2
+REFERENCE_LINE_WIDTH = 1
+REFERENCE_DASH = "dash"
+OVERLAY_DASH = "dot"
+MARKER_SIZE = 10
+MARKER_SYMBOL = "diamond"
+SURFACE_COLORSCALE = "Plasma"
+
+COLOR_CYCLE: list[str] = [
+    PALETTE["primary"],
+    PALETTE["secondary"],
+    PALETTE["tertiary"],
+    PALETTE["positive"],
+    PALETTE["negative"],
+    PALETTE["neutral"],
+]
 
 BLOOMBERG_TEMPLATE = go.layout.Template(
     layout=go.Layout(
@@ -23,29 +41,22 @@ BLOOMBERG_TEMPLATE = go.layout.Template(
         font=dict(family=_FONT_FAMILY, size=12, color=_TEXT_COLOR),
         title=dict(font=dict(size=16, color=_TEXT_COLOR)),
         xaxis=dict(
-            gridcolor=_GRID_COLOR,
+            gridcolor=GRID_COLOR,
             gridwidth=1,
-            zerolinecolor=_GRID_COLOR,
+            zerolinecolor=GRID_COLOR,
             title=dict(font=dict(size=14)),
         ),
         yaxis=dict(
-            gridcolor=_GRID_COLOR,
+            gridcolor=GRID_COLOR,
             gridwidth=1,
-            zerolinecolor=_GRID_COLOR,
+            zerolinecolor=GRID_COLOR,
             title=dict(font=dict(size=14)),
         ),
-        colorway=[
-            PALETTE["primary"],
-            PALETTE["secondary"],
-            PALETTE["tertiary"],
-            PALETTE["positive"],
-            PALETTE["negative"],
-            PALETTE["neutral"],
-        ],
+        colorway=COLOR_CYCLE,
         scene=dict(
-            xaxis=dict(gridcolor=_GRID_COLOR, backgroundcolor="#1a1a2e"),
-            yaxis=dict(gridcolor=_GRID_COLOR, backgroundcolor="#1a1a2e"),
-            zaxis=dict(gridcolor=_GRID_COLOR, backgroundcolor="#1a1a2e"),
+            xaxis=dict(gridcolor=GRID_COLOR, backgroundcolor="#1a1a2e"),
+            yaxis=dict(gridcolor=GRID_COLOR, backgroundcolor="#1a1a2e"),
+            zaxis=dict(gridcolor=GRID_COLOR, backgroundcolor="#1a1a2e"),
         ),
     )
 )
