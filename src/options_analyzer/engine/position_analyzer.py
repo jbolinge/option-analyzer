@@ -152,6 +152,37 @@ class PositionAnalyzer:
                 result[k].append(agg_second[k])
         return {k: np.array(v) for k, v in result.items()}
 
+    def delta_vs_price_at_dtes(
+        self,
+        position: Position,
+        price_range: np.ndarray,
+        ivs: dict[str, float],
+        dtes: list[float],
+    ) -> dict[str, np.ndarray]:
+        """Position delta across price range at multiple DTEs.
+
+        Returns dict mapping labels like "60 DTE" to delta arrays.
+        Useful for visualizing charm (dDelta/dTime).
+        """
+        result: dict[str, np.ndarray] = {}
+        for dte in dtes:
+            T = dte / 365.0
+            deltas: list[float] = []
+            for S in price_range:
+                agg_delta = 0.0
+                for leg in position.legs:
+                    contract = leg.contract
+                    sigma = ivs[contract.symbol]
+                    scale = leg.signed_quantity * contract.multiplier
+                    full = self.greeks_calculator.full(
+                        float(S), float(contract.strike), T, sigma, contract.option_type
+                    )
+                    agg_delta += full.first_order.delta * scale
+                deltas.append(agg_delta)
+            label = f"{dte:g} DTE"
+            result[label] = np.array(deltas)
+        return result
+
     def greeks_surface(
         self,
         position: Position,
