@@ -165,6 +165,69 @@ class TestGreeksVsTime:
             assert result[key].shape == (6,)
 
 
+class TestDeltaVsPriceAtDtes:
+    def test_returns_dict_with_correct_keys(self, analyzer: PositionAnalyzer) -> None:
+        """Keys match '{dte} DTE' format."""
+        position, ivs = _make_single_call_position()
+        price_range = np.linspace(80.0, 120.0, 11)
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [60, 30, 7])
+        assert set(result.keys()) == {"60 DTE", "30 DTE", "7 DTE"}
+
+    def test_correct_array_shape(self, analyzer: PositionAnalyzer) -> None:
+        """Each array matches len(price_range)."""
+        position, ivs = _make_single_call_position()
+        price_range = np.linspace(80.0, 120.0, 21)
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [60, 30])
+        for arr in result.values():
+            assert arr.shape == (21,)
+
+    def test_delta_increases_with_price_for_long_call(
+        self, analyzer: PositionAnalyzer
+    ) -> None:
+        """Delta monotonically increases for a simple long call."""
+        position, ivs = _make_single_call_position()
+        price_range = np.linspace(80.0, 120.0, 21)
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [30])
+        deltas = result["30 DTE"]
+        assert all(deltas[i + 1] >= deltas[i] for i in range(len(deltas) - 1))
+
+    def test_delta_steeper_at_lower_dte(self, analyzer: PositionAnalyzer) -> None:
+        """Lower DTE produces a sharper step function (charm effect)."""
+        position, ivs = _make_single_call_position()
+        price_range = np.linspace(80.0, 120.0, 51)
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [60, 7])
+        # Max delta difference across range is greater at lower DTE (sharper)
+        span_60 = result["60 DTE"][-1] - result["60 DTE"][0]
+        span_7 = result["7 DTE"][-1] - result["7 DTE"][0]
+        assert span_7 >= span_60
+
+    def test_multileg_scaling(self, analyzer: PositionAnalyzer) -> None:
+        """Vertical spread delta partially cancels and is bounded."""
+        position = make_vertical_spread("AAPL", [Decimal("100"), Decimal("110")])
+        ivs = {leg.contract.symbol: 0.20 for leg in position.legs}
+        price_range = np.linspace(80.0, 130.0, 21)
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [30])
+        deltas = result["30 DTE"]
+        # Net delta should be positive (long lower strike) but bounded
+        assert all(d >= -10 for d in deltas)  # not hugely negative
+        # Max net delta less than a single naked call (100 * 1 = 100)
+        assert max(deltas) < 100
+
+    def test_zero_dte_approaches_intrinsic_delta(
+        self, analyzer: PositionAnalyzer
+    ) -> None:
+        """At ~0 DTE, delta approaches step function (0 OTM, ~100 ITM)."""
+        position, ivs = _make_single_call_position()
+        # Strike is 100
+        price_range = np.array([80.0, 120.0])
+        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [0.01])
+        deltas = result["0.01 DTE"]
+        # Deep OTM: delta near 0
+        assert abs(deltas[0]) < 5.0
+        # Deep ITM: delta near 100 (scaled by multiplier)
+        assert deltas[1] > 90.0
+
+
 class TestGreeksSurface:
     def test_correct_shape(self, analyzer: PositionAnalyzer) -> None:
         position, ivs = _make_single_call_position()
