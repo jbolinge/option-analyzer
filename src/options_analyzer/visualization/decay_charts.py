@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from options_analyzer.visualization.theme import PALETTE, _GRID_COLOR, apply_theme
+from options_analyzer.visualization.theme import _GRID_COLOR, PALETTE, apply_theme
 
 
 def plot_theta_decay(
