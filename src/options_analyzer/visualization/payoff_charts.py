@@ -4,9 +4,11 @@ import numpy as np
 import plotly.graph_objects as go
 
 from options_analyzer.visualization.theme import (
+    COLOR_CYCLE,
     LINE_WIDTH,
     MARKER_SIZE,
     MARKER_SYMBOL,
+    OVERLAY_DASH,
     PALETTE,
     REFERENCE_DASH,
     REFERENCE_LINE_WIDTH,
@@ -85,6 +87,64 @@ def plot_theoretical_pnl(
                 line=dict(width=LINE_WIDTH),
             )
         )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Underlying Price",
+        yaxis_title="P&L ($)",
+    )
+
+    return apply_theme(fig)
+
+
+def plot_payoff_with_theoretical_pnl(
+    price_range: np.ndarray,
+    payoff: np.ndarray,
+    pnl_by_dte: dict[str, np.ndarray],
+    title: str = "P&L at Expiration with Theoretical P&L",
+) -> go.Figure:
+    """Expiration P&L (solid) with theoretical P&L curves at various DTEs (dotted).
+
+    Single Y-axis since both series are in dollars. The theoretical curves
+    converge toward the expiration payoff as DTE decreases.
+    """
+    fig = go.Figure()
+
+    # Expiration payoff — solid, primary color (orange)
+    fig.add_trace(
+        go.Scatter(
+            x=price_range,
+            y=payoff,
+            mode="lines",
+            name="Expiration",
+            line=dict(color=PALETTE["primary"], width=LINE_WIDTH),
+        )
+    )
+
+    # Theoretical P&L curves — dotted, cycling colors (skip orange)
+    for i, (label, pnl) in enumerate(pnl_by_dte.items()):
+        color = COLOR_CYCLE[(i + 1) % len(COLOR_CYCLE)]
+        fig.add_trace(
+            go.Scatter(
+                x=price_range,
+                y=pnl,
+                mode="lines",
+                name=label,
+                line=dict(color=color, width=LINE_WIDTH, dash=OVERLAY_DASH),
+            )
+        )
+
+    # Zero reference line
+    fig.add_shape(
+        type="line",
+        x0=float(price_range[0]),
+        x1=float(price_range[-1]),
+        y0=0,
+        y1=0,
+        line=dict(
+            color=PALETTE["neutral"], width=REFERENCE_LINE_WIDTH, dash=REFERENCE_DASH
+        ),
+    )
 
     fig.update_layout(
         title=title,

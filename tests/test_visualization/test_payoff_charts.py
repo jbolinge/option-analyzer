@@ -178,8 +178,9 @@ class TestPlotPayoffWithTheoreticalPnl:
         fig = plot_payoff_with_theoretical_pnl(
             self.price_range, self.payoff, self.pnl_by_dte
         )
-        # No secondary Y-axis — all traces on primary
-        assert fig.layout.yaxis2 is None
+        # No secondary Y-axis — all traces on primary (yaxis "y" or None)
+        for trace in fig.data:
+            assert trace.yaxis in (None, "y")
 
     def test_xaxis_label(self) -> None:
         fig = plot_payoff_with_theoretical_pnl(
