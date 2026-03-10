@@ -4,6 +4,10 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
+import numpy as np
+import numpy.typing as npt
+
+from options_analyzer.domain.candles import CandleBar, CandleSeries
 from options_analyzer.domain.enums import ExerciseStyle, OptionType, PositionSide
 from options_analyzer.domain.greeks import (
     FirstOrderGreeks,
@@ -185,6 +189,62 @@ def make_butterfly(
         legs=legs,
         opened_at=datetime.now(tz=UTC),
     )
+
+
+def make_candle_bar(**overrides: Any) -> CandleBar:
+    """Create a CandleBar with SPX-like defaults."""
+    defaults: dict[str, Any] = {
+        "symbol": "SPX",
+        "timestamp": datetime(2024, 6, 15, 16, 0, tzinfo=UTC),
+        "open": 5500.0,
+        "high": 5520.0,
+        "low": 5480.0,
+        "close": 5510.0,
+        "volume": 1_000_000,
+    }
+    defaults.update(overrides)
+    return CandleBar(**defaults)
+
+
+def make_candle_series(n: int = 100, seed: int = 42) -> CandleSeries:
+    """Create a CandleSeries with random-walk SPX-like data."""
+    rng = np.random.default_rng(seed)
+    base_price = 5500.0
+    bars: list[CandleBar] = []
+    price = base_price
+    for i in range(n):
+        change = rng.normal(0.5, 20.0)  # slight upward drift
+        close = price + change
+        high = max(price, close) + abs(rng.normal(0, 10.0))
+        low = min(price, close) - abs(rng.normal(0, 10.0))
+        bars.append(
+            CandleBar(
+                symbol="SPX",
+                timestamp=datetime(2024, 1, 1, 16, 0, tzinfo=UTC)
+                + timedelta(days=i),
+                open=price,
+                high=high,
+                low=low,
+                close=close,
+                volume=int(rng.integers(500_000, 2_000_000)),
+            )
+        )
+        price = close
+    return CandleSeries(bars=bars)
+
+
+def make_ohlcv_arrays(
+    n: int = 100, seed: int = 42
+) -> dict[str, npt.NDArray[np.float64]]:
+    """Create dict of numpy OHLCV arrays for standalone engine tests."""
+    series = make_candle_series(n=n, seed=seed)
+    return {
+        "open": series.opens,
+        "high": series.highs,
+        "low": series.lows,
+        "close": series.closes,
+        "volume": series.volumes,
+    }
 
 
 def make_iron_condor(

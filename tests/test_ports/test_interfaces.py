@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from options_analyzer.domain.candles import CandleSeries
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import Leg, OptionContract
 from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
@@ -71,6 +72,14 @@ class TestMarketDataProviderABC:
                 )
                 yield GreeksUpdate(event_symbol="", greeks=greeks)  # type: ignore[misc]
 
+            async def get_candles(
+                self,
+                symbol: str,
+                interval: str = "1d",
+                days_back: int = 365,
+            ) -> CandleSeries:
+                return CandleSeries(bars=[])
+
         provider = ConcreteProvider()
         assert isinstance(provider, MarketDataProvider)
 
@@ -83,6 +92,7 @@ class TestMarketDataProviderABC:
             "stream_greeks",
             "stream_quotes",
             "stream_greeks_and_quotes",
+            "get_candles",
         }
         assert expected == set(MarketDataProvider.__abstractmethods__)
 

@@ -170,7 +170,10 @@ class TestDeltaVsPriceAtDtes:
         """Keys match '{dte} DTE' format."""
         position, ivs = _make_single_call_position()
         price_range = np.linspace(80.0, 120.0, 11)
-        result = analyzer.delta_vs_price_at_dtes(position, price_range, ivs, [60, 30, 7])
+        dtes = [60, 30, 7]
+        result = analyzer.delta_vs_price_at_dtes(
+            position, price_range, ivs, dtes
+        )
         assert set(result.keys()) == {"60 DTE", "30 DTE", "7 DTE"}
 
     def test_correct_array_shape(self, analyzer: PositionAnalyzer) -> None:

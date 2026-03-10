@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from datetime import date
 from decimal import Decimal
 
+from options_analyzer.domain.candles import CandleSeries
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
 from options_analyzer.domain.streaming import StreamUpdate
@@ -43,3 +44,11 @@ class MarketDataProvider(ABC):
         contracts: list[OptionContract],
         quote_symbols: list[str],
     ) -> AsyncIterator[StreamUpdate]: ...
+
+    @abstractmethod
+    async def get_candles(
+        self,
+        symbol: str,
+        interval: str = "1d",
+        days_back: int = 365,
+    ) -> CandleSeries: ...

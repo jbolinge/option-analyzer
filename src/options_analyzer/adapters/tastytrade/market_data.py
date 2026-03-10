@@ -3,20 +3,22 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from tastytrade import DXLinkStreamer
-from tastytrade.dxfeed import Greeks, Quote
+from tastytrade.dxfeed import Candle, Greeks, Quote
 from tastytrade.instruments import get_option_chain
 from tastytrade.market_data import get_market_data
 from tastytrade.order import InstrumentType
 
 from options_analyzer.adapters.tastytrade.mapping import (
+    map_candle_to_bar,
     map_greeks_to_first_order,
     map_option_to_contract,
 )
+from options_analyzer.domain.candles import CandleSeries
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
 from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
@@ -112,6 +114,49 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             await streamer.subscribe(Quote, symbols)
             async for quote in streamer.listen(Quote):
                 yield (quote.event_symbol, quote.bid_price, quote.ask_price)
+
+    async def get_candles(
+        self,
+        symbol: str,
+        interval: str = "1d",
+        days_back: int = 365,
+    ) -> CandleSeries:
+        """Fetch historical candle data via DXLink streamer.
+
+        Index symbols (e.g. SPX) are prefixed with '$' per dxfeed convention.
+        """
+        # dxfeed convention: index symbols need '$' prefix
+        streamer_symbol = f"${symbol}" if not symbol.startswith("$") else symbol
+        start_time = datetime.now(tz=UTC) - timedelta(days=days_back)
+
+        candle_events = []
+        async with DXLinkStreamer(self._session.session) as streamer:
+            await streamer.subscribe_candle(
+                [streamer_symbol],
+                interval=interval,
+                start_time=start_time,
+            )
+            async for candle in streamer.listen(Candle):
+                candle_events.append(candle)
+                # Snapshot is complete when we get an event with
+                # event_flags indicating snapshot end, or we can collect
+                # until the stream pauses. Use snapshot_end detection.
+                if hasattr(candle, "event_flags"):
+                    # Bit 0x02 = SNAPSHOT_END in dxfeed protocol
+                    if candle.event_flags & 0x02:
+                        break
+
+        # Sort by timestamp, deduplicate
+        seen_times: set[object] = set()
+        unique_bars = []
+        for event in sorted(candle_events, key=lambda c: c.time):
+            if event.time in seen_times:
+                continue
+            seen_times.add(event.time)
+            bar = map_candle_to_bar(event, symbol)
+            unique_bars.append(bar)
+
+        return CandleSeries(bars=unique_bars)
 
     async def stream_greeks_and_quotes(
         self,

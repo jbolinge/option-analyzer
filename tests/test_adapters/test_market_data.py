@@ -13,7 +13,7 @@ from options_analyzer.adapters.tastytrade.session import TastyTradeSession
 from options_analyzer.domain.enums import OptionType
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
-from options_analyzer.domain.streaming import GreeksUpdate, QuoteUpdate
+from options_analyzer.domain.streaming import GreeksUpdate
 from options_analyzer.ports.market_data import MarketDataProvider
 
 
@@ -223,7 +223,9 @@ def _sdk_chain_for(contracts_and_streamers: list[tuple[str, str, str]]) -> dict:
     options = []
     for sym, underlying, streamer in contracts_and_streamers:
         options.append(
-            _make_sdk_option(symbol=sym, underlying=underlying, streamer_symbol=streamer)
+            _make_sdk_option(
+                symbol=sym, underlying=underlying, streamer_symbol=streamer
+            )
         )
     return {exp: options}
 
@@ -305,8 +307,10 @@ class TestEnsureStreamerSymbols:
             await provider._ensure_streamer_symbols([spy_contract, aapl_contract])
 
             assert call_count == 2
-            assert provider._streamer_symbols["SPY  260220C00450000"] == ".SPY260220C450"
-            assert provider._streamer_symbols["AAPL 260220C00200000"] == ".AAPL260220C200"
+            spy_sym = "SPY  260220C00450000"
+            aapl_sym = "AAPL 260220C00200000"
+            assert provider._streamer_symbols[spy_sym] == ".SPY260220C450"
+            assert provider._streamer_symbols[aapl_sym] == ".AAPL260220C200"
 
 
 class TestStreamGreeksAutoResolves:
