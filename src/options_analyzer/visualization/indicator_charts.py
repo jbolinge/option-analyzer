@@ -140,12 +140,16 @@ def plot_dstfs(
         _bias_color(v) if not np.isnan(v) else DSTFS_PALETTE["bias_0"]
         for v in result.total_bias
     ]
+    bias_opacities = [
+        0.0 if (not np.isnan(v) and int(v) == 0) else 1.0
+        for v in result.total_bias
+    ]
 
     fig.add_trace(
         go.Bar(
             x=x,
             y=np.where(valid_mask, result.total_bias, 0),
-            marker_color=bias_colors,
+            marker=dict(color=bias_colors, opacity=bias_opacities),
             name="Bias",
             showlegend=False,
         ),
@@ -158,7 +162,15 @@ def plot_dstfs(
         yaxis_title="Price",
         yaxis2_title="Bias",
         showlegend=True,
-        bargap=0,
+        bargap=0.3,
+    )
+
+    fig.update_yaxes(
+        zeroline=True,
+        zerolinecolor="#555555",
+        zerolinewidth=1,
+        row=2,
+        col=1,
     )
 
     return apply_theme(fig)
@@ -233,12 +245,16 @@ def plot_dstfs_candlestick(
         _bias_color(v) if not np.isnan(v) else DSTFS_PALETTE["bias_0"]
         for v in result.total_bias
     ]
+    bias_opacities = [
+        0.0 if (not np.isnan(v) and int(v) == 0) else 1.0
+        for v in result.total_bias
+    ]
 
     fig.add_trace(
         go.Bar(
             x=x,
             y=np.where(valid_mask, result.total_bias, 0),
-            marker_color=bias_colors,
+            marker=dict(color=bias_colors, opacity=bias_opacities),
             name="Bias",
             showlegend=False,
         ),
@@ -251,8 +267,16 @@ def plot_dstfs_candlestick(
         yaxis_title="Price",
         yaxis2_title="Bias",
         showlegend=True,
-        bargap=0,
+        bargap=0.3,
         xaxis_rangeslider_visible=False,
+    )
+
+    fig.update_yaxes(
+        zeroline=True,
+        zerolinecolor="#555555",
+        zerolinewidth=1,
+        row=2,
+        col=1,
     )
 
     return apply_theme(fig)
