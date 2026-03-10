@@ -8,13 +8,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from options_analyzer.domain.candles import CandleBar
 from options_analyzer.domain.enums import ExerciseStyle, OptionType, PositionSide
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import Leg, OptionContract
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from tastytrade.account import CurrentPosition
-    from tastytrade.dxfeed import Greeks
+    from tastytrade.dxfeed import Candle, Greeks
     from tastytrade.instruments import Option
 
 
@@ -65,4 +68,30 @@ def map_greeks_to_first_order(greeks: Greeks | Any) -> FirstOrderGreeks:
         vega=float(greeks.vega),
         rho=float(greeks.rho),
         iv=float(greeks.volatility),
+    )
+
+
+def map_candle_to_bar(
+    candle: Candle | Any, symbol: str, timestamp: datetime | None = None
+) -> CandleBar:
+    """Map a tastytrade dxfeed Candle event to a domain CandleBar."""
+    import datetime as dt_mod
+
+    if timestamp is not None:
+        ts = timestamp
+    elif isinstance(candle.time, dt_mod.datetime):
+        ts = candle.time
+    else:
+        # SDK may return epoch millis as int
+        ts = dt_mod.datetime.fromtimestamp(
+            candle.time / 1000, tz=dt_mod.UTC
+        )
+    return CandleBar(
+        symbol=symbol,
+        timestamp=ts,
+        open=float(candle.open),
+        high=float(candle.high),
+        low=float(candle.low),
+        close=float(candle.close),
+        volume=int(candle.volume) if candle.volume else 0,
     )

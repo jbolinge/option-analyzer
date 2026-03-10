@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from options_analyzer.visualization.theme import (
     BLOOMBERG_TEMPLATE,
     COLOR_CYCLE,
+    DSTFS_PALETTE,
     GRID_COLOR,
     LINE_WIDTH,
     MARKER_SIZE,
@@ -145,3 +146,31 @@ class TestStyleConstants:
     def test_color_cycle_matches_template_colorway(self) -> None:
         colorway = list(BLOOMBERG_TEMPLATE.layout.colorway)  # type: ignore[union-attr]
         assert COLOR_CYCLE == colorway
+
+
+class TestDSTFSPalette:
+    """Tests for DSTFS_PALETTE color constants."""
+
+    def test_has_all_required_keys(self) -> None:
+        expected_keys = {
+            "sma_rising", "sma_falling",
+            "hma_rising", "hma_falling",
+            "bias_4", "bias_2", "bias_0", "bias_-2", "bias_-4",
+            "candle_up", "candle_down",
+        }
+        assert set(DSTFS_PALETTE.keys()) == expected_keys
+
+    def test_sma_colors_reuse_palette(self) -> None:
+        assert DSTFS_PALETTE["sma_rising"] == PALETTE["positive"]
+        assert DSTFS_PALETTE["sma_falling"] == PALETTE["negative"]
+
+    def test_hma_colors_reuse_palette(self) -> None:
+        assert DSTFS_PALETTE["hma_rising"] == PALETTE["secondary"]
+        assert DSTFS_PALETTE["hma_falling"] == PALETTE["tertiary"]
+
+    def test_bias_extremes_match_positive_negative(self) -> None:
+        assert DSTFS_PALETTE["bias_4"] == PALETTE["positive"]
+        assert DSTFS_PALETTE["bias_-4"] == PALETTE["negative"]
+
+    def test_bias_zero_is_white(self) -> None:
+        assert DSTFS_PALETTE["bias_0"] == "#ffffff"

@@ -25,6 +25,20 @@ MARKER_SIZE = 10
 MARKER_SYMBOL = "diamond"
 SURFACE_COLORSCALE = "Plasma"
 
+DSTFS_PALETTE: dict[str, str] = {
+    "sma_rising": PALETTE["positive"],
+    "sma_falling": PALETTE["negative"],
+    "hma_rising": PALETTE["secondary"],
+    "hma_falling": PALETTE["tertiary"],
+    "bias_4": PALETTE["positive"],
+    "bias_2": PALETTE["secondary"],
+    "bias_0": "#ffffff",
+    "bias_-2": PALETTE["tertiary"],
+    "bias_-4": PALETTE["negative"],
+    "candle_up": PALETTE["positive"],
+    "candle_down": PALETTE["negative"],
+}
+
 COLOR_CYCLE: list[str] = [
     PALETTE["primary"],
     PALETTE["secondary"],
