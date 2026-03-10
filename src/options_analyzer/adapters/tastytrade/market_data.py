@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -27,6 +28,8 @@ from options_analyzer.ports.market_data import MarketDataProvider
 
 if TYPE_CHECKING:
     from options_analyzer.adapters.tastytrade.session import TastyTradeSession
+
+logger = logging.getLogger(__name__)
 
 
 class TastyTradeMarketDataProvider(MarketDataProvider):
@@ -125,27 +128,46 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         """Fetch historical candle data via DXLink streamer.
 
         Index symbols (e.g. SPX) are prefixed with '$' per dxfeed convention.
+        Retries up to 3 times with fresh connections if no events arrive.
         """
         # dxfeed convention: index symbols need '$' prefix
         streamer_symbol = f"${symbol}" if not symbol.startswith("$") else symbol
         start_time = datetime.now(tz=UTC) - timedelta(days=days_back)
 
-        candle_events = []
-        async with DXLinkStreamer(self._session.session) as streamer:
-            await streamer.subscribe_candle(
-                [streamer_symbol],
-                interval=interval,
-                start_time=start_time,
+        max_attempts = 3
+        candle_events: list[Candle] = []
+        for attempt in range(1, max_attempts + 1):
+            logger.debug(
+                "get_candles attempt %d/%d for %s",
+                attempt, max_attempts, streamer_symbol,
             )
-            try:
-                async with asyncio.timeout(30):
-                    async for candle in streamer.listen(Candle):
-                        if not candle.remove:
-                            candle_events.append(candle)
-                        if candle.snapshot_end or candle.snapshot_snip:
-                            break
-            except TimeoutError:
-                pass  # Return whatever we collected before timeout
+            candle_events = await self._fetch_candle_events(
+                streamer_symbol, interval, start_time,
+            )
+            if candle_events:
+                logger.debug(
+                    "Collected %d candle events for %s on attempt %d",
+                    len(candle_events), streamer_symbol, attempt,
+                )
+                break
+            logger.warning(
+                "get_candles attempt %d/%d returned 0 events for %s",
+                attempt, max_attempts, streamer_symbol,
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(2)
+
+        if not candle_events:
+            logger.warning(
+                "All %d attempts returned 0 candle events for %s, "
+                "falling back to yfinance",
+                max_attempts, streamer_symbol,
+            )
+            from options_analyzer.adapters.yfinance_candles import (
+                fetch_candles_yfinance,
+            )
+
+            return await fetch_candles_yfinance(symbol, interval, days_back)
 
         # Sort by timestamp, deduplicate
         seen_times: set[object] = set()
@@ -158,6 +180,35 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             unique_bars.append(bar)
 
         return CandleSeries(bars=unique_bars)
+
+    async def _fetch_candle_events(
+        self,
+        streamer_symbol: str,
+        interval: str,
+        start_time: datetime,
+        timeout_seconds: float = 30,
+    ) -> list[Candle]:
+        """Single attempt to fetch candle events via a fresh DXLink connection."""
+        events: list[Candle] = []
+        try:
+            async with asyncio.timeout(timeout_seconds):
+                async with DXLinkStreamer(self._session.session) as streamer:
+                    await streamer.subscribe_candle(
+                        [streamer_symbol],
+                        interval=interval,
+                        start_time=start_time,
+                    )
+                    async for candle in streamer.listen(Candle):
+                        if not candle.remove:
+                            events.append(candle)
+                        if candle.snapshot_end or candle.snapshot_snip:
+                            break
+        except TimeoutError:
+            logger.debug(
+                "Candle fetch timed out after %.0fs with %d events for %s",
+                timeout_seconds, len(events), streamer_symbol,
+            )
+        return events
 
     async def stream_greeks_and_quotes(
         self,
