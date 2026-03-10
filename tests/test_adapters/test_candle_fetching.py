@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -103,11 +102,11 @@ def _candle_events(n: int = 3) -> list[MagicMock]:
     return events
 
 
-class TestGetCandlesRetry:
-    """Tests for retry logic in get_candles."""
+class TestGetCandles:
+    """Tests for get_candles with single-attempt + yfinance fallback."""
 
     @pytest.mark.asyncio
-    async def test_success_on_first_attempt(self) -> None:
+    async def test_success_returns_bars(self) -> None:
         provider = _make_provider()
         events = _candle_events(3)
         with patch.object(
@@ -118,45 +117,6 @@ class TestGetCandlesRetry:
 
         assert len(result.bars) == 3
         assert mock_fetch.await_count == 1
-
-    @pytest.mark.asyncio
-    async def test_retry_on_empty_then_success(self) -> None:
-        provider = _make_provider()
-        events = _candle_events(2)
-        with (
-            patch.object(
-                provider, "_fetch_candle_events", new_callable=AsyncMock
-            ) as mock_fetch,
-            patch("options_analyzer.adapters.tastytrade.market_data.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
-        ):
-            mock_fetch.side_effect = [[], events]
-            result = await provider.get_candles("SPX", days_back=30)
-
-        assert len(result.bars) == 2
-        assert mock_fetch.await_count == 2
-        mock_sleep.assert_awaited_once_with(2)
-
-    @pytest.mark.asyncio
-    async def test_all_attempts_fail_falls_back_to_yfinance(self) -> None:
-        provider = _make_provider()
-        mock_series = MagicMock()
-        with (
-            patch.object(
-                provider, "_fetch_candle_events", new_callable=AsyncMock
-            ) as mock_fetch,
-            patch("options_analyzer.adapters.tastytrade.market_data.asyncio.sleep", new_callable=AsyncMock),
-            patch(
-                "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
-                new_callable=AsyncMock,
-            ) as mock_yf,
-        ):
-            mock_fetch.return_value = []
-            mock_yf.return_value = mock_series
-            result = await provider.get_candles("SPX", days_back=30)
-
-        assert mock_fetch.await_count == 3
-        mock_yf.assert_awaited_once()
-        assert result is mock_series
 
     @pytest.mark.asyncio
     async def test_dollar_prefix_not_doubled(self) -> None:
@@ -172,20 +132,29 @@ class TestGetCandlesRetry:
         call_args = mock_fetch.call_args
         assert call_args[0][0] == "$SPX"  # not "$$SPX"
 
+    @pytest.mark.asyncio
+    async def test_uses_3s_timeout(self) -> None:
+        """get_candles passes a 3-second timeout to _fetch_candle_events."""
+        provider = _make_provider()
+        events = _candle_events(1)
+        with patch.object(
+            provider, "_fetch_candle_events", new_callable=AsyncMock
+        ) as mock_fetch:
+            mock_fetch.return_value = events
+            await provider.get_candles("SPX", days_back=30)
 
-class TestYfinanceFallback:
-    """Tests for yfinance fallback when DXLink returns 0 events."""
+        _, kwargs = mock_fetch.call_args
+        assert kwargs.get("timeout_seconds") == 3
 
     @pytest.mark.asyncio
-    async def test_fallback_called_when_dxlink_empty(self) -> None:
-        """When all DXLink attempts fail, yfinance fallback is used."""
+    async def test_fallback_on_empty_events(self) -> None:
+        """When DXLink returns no events, yfinance fallback is used."""
         provider = _make_provider()
         mock_series = MagicMock()
         with (
             patch.object(
                 provider, "_fetch_candle_events", new_callable=AsyncMock
             ) as mock_fetch,
-            patch("options_analyzer.adapters.tastytrade.market_data.asyncio.sleep", new_callable=AsyncMock),
             patch(
                 "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
                 new_callable=AsyncMock,
@@ -195,11 +164,12 @@ class TestYfinanceFallback:
             mock_yf.return_value = mock_series
             result = await provider.get_candles("SPX", days_back=30)
 
+        assert mock_fetch.await_count == 1
         mock_yf.assert_awaited_once_with("SPX", "1d", 30)
         assert result is mock_series
 
     @pytest.mark.asyncio
-    async def test_fallback_not_called_when_dxlink_succeeds(self) -> None:
+    async def test_no_fallback_when_dxlink_succeeds(self) -> None:
         """When DXLink returns data, yfinance is not called."""
         provider = _make_provider()
         events = _candle_events(3)
@@ -217,3 +187,62 @@ class TestYfinanceFallback:
 
         mock_yf.assert_not_awaited()
         assert len(result.bars) == 3
+
+
+class TestFetchCandleEventsExceptionHandling:
+    """Tests for exception handling in _fetch_candle_events."""
+
+    @pytest.mark.asyncio
+    async def test_timeout_error_returns_partial_events(self) -> None:
+        """TimeoutError is caught and partial events are returned."""
+        provider = _make_provider()
+
+        async def _timeout_streamer(*_args: object, **_kwargs: object) -> list:
+            raise TimeoutError
+
+        with patch.object(
+            provider, "_fetch_candle_events", wraps=provider._fetch_candle_events
+        ):
+            # Use the real method but mock DXLinkStreamer to raise TimeoutError
+            with patch(
+                "options_analyzer.adapters.tastytrade.market_data.DXLinkStreamer",
+                side_effect=TimeoutError,
+            ):
+                result = await provider._fetch_candle_events(
+                    "$SPX", "1d", datetime(2024, 1, 1, tzinfo=UTC),
+                    timeout_seconds=1,
+                )
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_httpx_connect_timeout_returns_empty(self) -> None:
+        """httpx.ConnectTimeout (non-asyncio) is caught and returns empty list."""
+        import httpx
+
+        provider = _make_provider()
+        with patch(
+            "options_analyzer.adapters.tastytrade.market_data.DXLinkStreamer",
+            side_effect=httpx.ConnectTimeout("connection timed out"),
+        ):
+            result = await provider._fetch_candle_events(
+                "$SPX", "1d", datetime(2024, 1, 1, tzinfo=UTC),
+                timeout_seconds=1,
+            )
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_generic_exception_returns_empty(self) -> None:
+        """Any unexpected exception is caught and returns empty list."""
+        provider = _make_provider()
+        with patch(
+            "options_analyzer.adapters.tastytrade.market_data.DXLinkStreamer",
+            side_effect=RuntimeError("something broke"),
+        ):
+            result = await provider._fetch_candle_events(
+                "$SPX", "1d", datetime(2024, 1, 1, tzinfo=UTC),
+                timeout_seconds=1,
+            )
+
+        assert result == []

@@ -128,40 +128,21 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         """Fetch historical candle data via DXLink streamer.
 
         Index symbols (e.g. SPX) are prefixed with '$' per dxfeed convention.
-        Retries up to 3 times with fresh connections if no events arrive.
+        Falls back to yfinance if DXLink returns no events or fails.
         """
         # dxfeed convention: index symbols need '$' prefix
         streamer_symbol = f"${symbol}" if not symbol.startswith("$") else symbol
         start_time = datetime.now(tz=UTC) - timedelta(days=days_back)
 
-        max_attempts = 3
-        candle_events: list[Candle] = []
-        for attempt in range(1, max_attempts + 1):
-            logger.debug(
-                "get_candles attempt %d/%d for %s",
-                attempt, max_attempts, streamer_symbol,
-            )
-            candle_events = await self._fetch_candle_events(
-                streamer_symbol, interval, start_time,
-            )
-            if candle_events:
-                logger.debug(
-                    "Collected %d candle events for %s on attempt %d",
-                    len(candle_events), streamer_symbol, attempt,
-                )
-                break
-            logger.warning(
-                "get_candles attempt %d/%d returned 0 events for %s",
-                attempt, max_attempts, streamer_symbol,
-            )
-            if attempt < max_attempts:
-                await asyncio.sleep(2)
+        candle_events = await self._fetch_candle_events(
+            streamer_symbol, interval, start_time, timeout_seconds=3,
+        )
 
         if not candle_events:
             logger.warning(
-                "All %d attempts returned 0 candle events for %s, "
+                "DXLink returned 0 candle events for %s, "
                 "falling back to yfinance",
-                max_attempts, streamer_symbol,
+                streamer_symbol,
             )
             from options_analyzer.adapters.yfinance_candles import (
                 fetch_candles_yfinance,
@@ -207,6 +188,10 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             logger.debug(
                 "Candle fetch timed out after %.0fs with %d events for %s",
                 timeout_seconds, len(events), streamer_symbol,
+            )
+        except Exception as exc:
+            logger.debug(
+                "Candle fetch failed for %s: %s", streamer_symbol, exc,
             )
         return events
 
