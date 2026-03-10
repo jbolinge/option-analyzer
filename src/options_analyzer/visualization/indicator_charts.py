@@ -40,16 +40,17 @@ def _add_colored_line(
     rising_y = np.where(is_rising == 1.0, y, np.nan)
     falling_y = np.where(is_rising == -1.0, y, np.nan)
 
-    # Fill overlap at transitions so segments connect
+    # Bridge transitions so color segments visually connect
     for i in range(1, len(y)):
-        if np.isnan(rising_y[i]) and not np.isnan(rising_y[i - 1]):
-            # Transition from rising to falling — extend rising one step
-            if not np.isnan(y[i]):
-                rising_y[i] = y[i]
-        if np.isnan(falling_y[i]) and not np.isnan(falling_y[i - 1]):
-            # Transition from falling to rising — extend falling one step
-            if not np.isnan(y[i]):
-                falling_y[i] = y[i]
+        if np.isnan(y[i]) or np.isnan(y[i - 1]):
+            continue
+        prev, curr = is_rising[i - 1], is_rising[i]
+        # rising → falling: extend rising one step to connect
+        if prev == 1.0 and curr == -1.0:
+            rising_y[i] = y[i]
+        # falling → rising: extend falling one step to connect
+        elif prev == -1.0 and curr == 1.0:
+            falling_y[i] = y[i]
 
     fig.add_trace(
         go.Scatter(
