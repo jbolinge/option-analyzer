@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -136,11 +137,15 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
                 interval=interval,
                 start_time=start_time,
             )
-            async for candle in streamer.listen(Candle):
-                if not candle.remove:
-                    candle_events.append(candle)
-                if candle.snapshot_end or candle.snapshot_snip:
-                    break
+            try:
+                async with asyncio.timeout(30):
+                    async for candle in streamer.listen(Candle):
+                        if not candle.remove:
+                            candle_events.append(candle)
+                        if candle.snapshot_end or candle.snapshot_snip:
+                            break
+            except TimeoutError:
+                pass  # Return whatever we collected before timeout
 
         # Sort by timestamp, deduplicate
         seen_times: set[object] = set()
