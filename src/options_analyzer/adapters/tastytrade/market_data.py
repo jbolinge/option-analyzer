@@ -137,14 +137,10 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
                 start_time=start_time,
             )
             async for candle in streamer.listen(Candle):
-                candle_events.append(candle)
-                # Snapshot is complete when we get an event with
-                # event_flags indicating snapshot end, or we can collect
-                # until the stream pauses. Use snapshot_end detection.
-                if hasattr(candle, "event_flags"):
-                    # Bit 0x02 = SNAPSHOT_END in dxfeed protocol
-                    if candle.event_flags & 0x02:
-                        break
+                if not candle.remove:
+                    candle_events.append(candle)
+                if candle.snapshot_end or candle.snapshot_snip:
+                    break
 
         # Sort by timestamp, deduplicate
         seen_times: set[object] = set()
