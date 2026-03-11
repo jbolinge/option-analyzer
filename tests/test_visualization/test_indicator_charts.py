@@ -229,6 +229,11 @@ class TestPlotDSTFS:
         fig = plot_dstfs(self.result)
         assert fig.layout.xaxis.rangebreaks is None or len(fig.layout.xaxis.rangebreaks) == 0
 
+    def test_yaxes_on_right_side(self) -> None:
+        fig = plot_dstfs(self.result)
+        assert fig.layout.yaxis.side == "right"
+        assert fig.layout.yaxis2.side == "right"
+
 
 class TestPlotDSTFSCandlestick:
     """Tests for plot_dstfs_candlestick chart."""
@@ -314,3 +319,41 @@ class TestPlotDSTFSCandlestick:
             lows=self.series.lows,
         )
         assert fig.layout.xaxis.rangebreaks is None or len(fig.layout.xaxis.rangebreaks) == 0
+
+    def test_yaxes_on_right_side(self) -> None:
+        fig = plot_dstfs_candlestick(
+            self.result,
+            opens=self.series.opens,
+            highs=self.series.highs,
+            lows=self.series.lows,
+        )
+        assert fig.layout.yaxis.side == "right"
+        assert fig.layout.yaxis2.side == "right"
+
+    def test_last_close_annotation(self) -> None:
+        fig = plot_dstfs_candlestick(
+            self.result,
+            opens=self.series.opens,
+            highs=self.series.highs,
+            lows=self.series.lows,
+        )
+        last_close = float(self.result.close[-1])
+        annotations = [a for a in fig.layout.annotations if f"{last_close:,.2f}" in a.text]
+        assert len(annotations) == 1
+        assert annotations[0].bgcolor in (
+            DSTFS_PALETTE["candle_up"],
+            DSTFS_PALETTE["candle_down"],
+        )
+
+    def test_bias_zeroline_dashed(self) -> None:
+        fig = plot_dstfs_candlestick(
+            self.result,
+            opens=self.series.opens,
+            highs=self.series.highs,
+            lows=self.series.lows,
+        )
+        dashed_zeros = [
+            s for s in fig.layout.shapes
+            if s.yref == "y2" and s.y0 == 0 and s.line.dash == "dash"
+        ]
+        assert len(dashed_zeros) == 1

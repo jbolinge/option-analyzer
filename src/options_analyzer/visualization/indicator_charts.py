@@ -186,16 +186,19 @@ def plot_dstfs(
         yaxis_title="Price",
         yaxis2_title="Bias",
         showlegend=True,
-        bargap=0.3,
+        bargap=0.5,
     )
 
-    fig.update_yaxes(
-        zeroline=True,
-        zerolinecolor="#555555",
-        zerolinewidth=1,
-        row=2,
-        col=1,
+    fig.update_yaxes(zeroline=False, row=2, col=1)
+
+    fig.add_shape(
+        type="line",
+        x0=0, x1=1, xref="paper",
+        y0=0, y1=0, yref="y2",
+        line=dict(color="#555555", width=1, dash="dash"),
     )
+
+    fig.update_yaxes(side="right")
 
     rangebreaks = _compute_rangebreaks(x)
     if rangebreaks:
@@ -295,16 +298,39 @@ def plot_dstfs_candlestick(
         yaxis_title="Price",
         yaxis2_title="Bias",
         showlegend=True,
-        bargap=0.3,
+        bargap=0.5,
         xaxis_rangeslider_visible=False,
     )
 
-    fig.update_yaxes(
-        zeroline=True,
-        zerolinecolor="#555555",
-        zerolinewidth=1,
-        row=2,
-        col=1,
+    fig.update_yaxes(zeroline=False, row=2, col=1)
+
+    fig.add_shape(
+        type="line",
+        x0=0, x1=1, xref="paper",
+        y0=0, y1=0, yref="y2",
+        line=dict(color="#555555", width=1, dash="dash"),
+    )
+
+    fig.update_yaxes(side="right")
+
+    # Last-close price annotation
+    last_close = float(result.close[-1])
+    last_color = (
+        DSTFS_PALETTE["candle_up"]
+        if last_close >= float(opens[-1])
+        else DSTFS_PALETTE["candle_down"]
+    )
+    fig.add_annotation(
+        x=1.0,
+        xref="paper",
+        xanchor="left",
+        y=last_close,
+        yref="y",
+        text=f" {last_close:,.2f} ",
+        showarrow=False,
+        font=dict(color="#000000", size=11),
+        bgcolor=last_color,
+        borderpad=2,
     )
 
     rangebreaks = _compute_rangebreaks(x)
