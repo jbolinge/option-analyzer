@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Sequence
 from typing import Any
 
@@ -16,6 +17,28 @@ from options_analyzer.visualization.theme import (
     LINE_WIDTH,
     apply_theme,
 )
+
+
+def _compute_rangebreaks(x: Sequence[Any]) -> list[dict[str, Any]]:
+    """Compute Plotly rangebreaks to hide weekends and holidays from a date axis."""
+    if not x or not isinstance(x[0], (dt.datetime, dt.date)):
+        return []
+
+    dates = [v.date() if isinstance(v, dt.datetime) else v for v in x]
+    holidays: list[str] = []
+    one_day = dt.timedelta(days=1)
+
+    for i in range(1, len(dates)):
+        d = dates[i - 1] + one_day
+        while d < dates[i]:
+            if d.weekday() < 5:  # weekday gap = holiday
+                holidays.append(d.isoformat())
+            d += one_day
+
+    breaks: list[dict[str, Any]] = [{"bounds": ["sat", "mon"]}]
+    if holidays:
+        breaks.append({"values": holidays})
+    return breaks
 
 
 def _bias_color(value: float | int) -> str:
@@ -174,6 +197,10 @@ def plot_dstfs(
         col=1,
     )
 
+    rangebreaks = _compute_rangebreaks(x)
+    if rangebreaks:
+        fig.update_xaxes(rangebreaks=rangebreaks)
+
     return apply_theme(fig)
 
 
@@ -279,5 +306,9 @@ def plot_dstfs_candlestick(
         row=2,
         col=1,
     )
+
+    rangebreaks = _compute_rangebreaks(x)
+    if rangebreaks:
+        fig.update_xaxes(rangebreaks=rangebreaks)
 
     return apply_theme(fig)
