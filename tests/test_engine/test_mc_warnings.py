@@ -57,10 +57,13 @@ def _make_stress_scenario(
 def _make_calm_scenario() -> MCWarningsResult:
     """No indicators in warning state."""
     n = 200
-    # ATR: low vol
-    high = np.full(n, 101.0)
-    low = np.full(n, 99.0)
-    close = np.full(n, 100.0)
+    # ATR: low vol with varying spread so BB stdev > 0 and ATR stays inside bands
+    rng = np.random.default_rng(42)
+    base = 100.0 + np.cumsum(rng.normal(0, 0.05, n))
+    spread = 1.0 + rng.uniform(0, 1.0, n)  # varying TR between 1 and 2
+    high = base + spread / 2
+    low = base - spread / 2
+    close = base
     atr = compute_atr_bollinger(high, low, close)
 
     # OBV: steady buying

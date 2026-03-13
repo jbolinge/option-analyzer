@@ -57,9 +57,9 @@ def compute_atr_bollinger(
     severity = np.full_like(close, np.nan)
     valid = ~np.isnan(atr_ema) & ~np.isnan(bb_upper_2)
     severity[valid] = np.where(
-        atr_ema[valid] > bb_upper_2[valid],
+        atr_ema[valid] >= bb_upper_2[valid],
         2.0,
-        np.where(atr_ema[valid] > bb_upper_1[valid], 1.0, 0.0),
+        np.where(atr_ema[valid] >= bb_upper_1[valid], 1.0, 0.0),
     )
 
     return ATRBollingerResult(

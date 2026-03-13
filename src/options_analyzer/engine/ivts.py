@@ -18,7 +18,7 @@ class IVTSResult:
 
     ratio: npt.NDArray[np.float64]  # VIX / VIX3M
     smoothed: npt.NDArray[np.float64]  # SMA of ratio
-    severity: npt.NDArray[np.float64]  # 0=normal, 1=smoothed>=0.9, 2=smoothed>=1.0
+    severity: npt.NDArray[np.float64]  # 0=normal, 1=ratio>=0.9, 2=ratio>=threshold
 
 
 def compute_ivts(
@@ -46,13 +46,14 @@ def compute_ivts(
 
     smoothed = sma(ratio, smooth_period)
 
-    # Severity: 0=normal, 1=smoothed>=0.9, 2=smoothed>=threshold (default 1.0)
+    # Severity: based on raw ratio (not smoothed), matching PineScript
+    # 0=normal, 1=ratio>=0.9, 2=ratio>=threshold (default 1.0)
     severity = np.full_like(vix, np.nan)
-    valid = ~np.isnan(smoothed)
+    valid = ~np.isnan(ratio)
     severity[valid] = np.where(
-        smoothed[valid] >= threshold,
+        ratio[valid] >= threshold,
         2.0,
-        np.where(smoothed[valid] >= 0.9, 1.0, 0.0),
+        np.where(ratio[valid] >= 0.9, 1.0, 0.0),
     )
 
     return IVTSResult(

@@ -51,15 +51,17 @@ class TestComputeATRBollinger:
         valid = self.result.atr_ema[~np.isnan(self.result.atr_ema)]
         assert np.all(valid >= 0)
 
-    def test_low_volatility_no_warning(self) -> None:
-        # Constant prices → zero TR → no warning
+    def test_low_volatility_constant_prices(self) -> None:
+        # Constant prices → TR=0 → atr_ema=0, bands=0
+        # With >= comparison: 0 >= 0 is True → severity 2 (matches PineScript)
         n = 200
         close = np.full(n, 100.0)
         high = np.full(n, 100.0)
         low = np.full(n, 100.0)
         result = compute_atr_bollinger(high, low, close)
         valid = result.severity[~np.isnan(result.severity)]
-        assert np.all(valid == 0.0)
+        # Degenerate case: all zero → atr_ema == all bands → severity 2
+        assert np.all(valid == 2.0)
 
     def test_custom_periods(self) -> None:
         result = compute_atr_bollinger(
@@ -85,3 +87,27 @@ class TestComputeATRBollinger:
                 self.result.atr_ema[valid][sev2]
                 >= self.result.bb_upper_2[valid][sev2]
             )
+
+    def test_severity_boundary_at_upper2(self) -> None:
+        """ATR exactly at upper_2 BB should give severity 2 (>=, not >)."""
+        n = 200
+        close = np.full(n, 100.0)
+        high = np.full(n, 101.0)
+        low = np.full(n, 99.0)
+        result = compute_atr_bollinger(high, low, close)
+        valid = ~np.isnan(result.severity) & ~np.isnan(result.bb_upper_2)
+        # Find any point where atr_ema == bb_upper_2 exactly
+        at_boundary = np.isclose(
+            result.atr_ema[valid], result.bb_upper_2[valid], atol=1e-12
+        )
+        if np.any(at_boundary):
+            assert np.all(result.severity[valid][at_boundary] == 2.0)
+
+    def test_severity_boundary_at_upper1(self) -> None:
+        """ATR exactly at upper_1 BB should give severity >= 1 (>=, not >)."""
+        valid = ~np.isnan(self.result.severity) & ~np.isnan(self.result.bb_upper_1)
+        at_boundary = np.isclose(
+            self.result.atr_ema[valid], self.result.bb_upper_1[valid], atol=1e-12
+        )
+        if np.any(at_boundary):
+            assert np.all(self.result.severity[valid][at_boundary] >= 1.0)

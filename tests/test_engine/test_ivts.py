@@ -96,6 +96,37 @@ class TestComputeIVTS:
         valid = result.severity[~np.isnan(result.severity)]
         assert np.all(valid == 2.0)
 
+    def test_severity_uses_raw_ratio_not_smoothed(self) -> None:
+        """Severity should be based on raw ratio, not smoothed SMA."""
+        # Create data where raw ratio crosses threshold but SMA doesn't
+        n = 20
+        # Start with low ratio, then spike — raw crosses 1.0 before SMA does
+        vix = np.concatenate([np.full(15, 15.0), np.full(5, 25.0)])
+        vix3m = np.full(n, 20.0)
+        result = compute_ivts(vix, vix3m, smooth_period=5)
+        # At index 15 (first spike), raw ratio = 1.25, but SMA still < 1.0
+        # Severity should be 2 based on raw ratio
+        assert result.ratio[15] == pytest.approx(1.25)
+        assert result.severity[15] == 2.0
+
+    def test_severity_boundary_at_threshold(self) -> None:
+        """Ratio exactly at threshold should give severity 2 (>=)."""
+        n = 200
+        vix = np.full(n, 20.0)
+        vix3m = np.full(n, 20.0)  # ratio = 1.0 exactly
+        result = compute_ivts(vix, vix3m, threshold=1.0)
+        valid = result.severity[~np.isnan(result.severity)]
+        assert np.all(valid == 2.0)
+
+    def test_severity_boundary_at_0_9(self) -> None:
+        """Ratio exactly at 0.9 should give severity 1 (>=)."""
+        n = 200
+        vix = np.full(n, 18.0)
+        vix3m = np.full(n, 20.0)  # ratio = 0.9 exactly
+        result = compute_ivts(vix, vix3m)
+        valid = result.severity[~np.isnan(result.severity)]
+        assert np.all(valid == 1.0)
+
     def test_frozen_dataclass(self) -> None:
         with pytest.raises(AttributeError):
             self.result.ratio = np.array([1.0])  # type: ignore[misc]
