@@ -371,7 +371,7 @@ def plot_ivts(
     col: int = 1,
 ) -> go.Figure:
     """4-color IVTS line with threshold reference lines."""
-    n = len(result.smoothed)
+    n = len(result.ratio)
     x = list(timestamps) if timestamps is not None else list(range(n))
     standalone = fig is None
     if standalone:
@@ -379,7 +379,7 @@ def plot_ivts(
     assert fig is not None
 
     add_threshold_colored_line(
-        fig, x, result.smoothed,
+        fig, x, result.ratio,
         thresholds=[0.9, 0.95, 1.0],
         colors=[
             IVTS_PALETTE["line_green"],
@@ -591,10 +591,10 @@ def plot_full_grid(
     timestamps: Sequence[Any] | None = None,
     title: str = "Market Conditions Dashboard",
 ) -> go.Figure:
-    """Assemble all 6 panels into a single vertically-stacked figure."""
+    """Assemble all 5 panels into a single vertically-stacked figure."""
     fig = make_subplots(
-        rows=6, cols=1, shared_xaxes=True,
-        row_heights=[0.40, 0.12, 0.12, 0.08, 0.12, 0.16],
+        rows=5, cols=1, shared_xaxes=True,
+        row_heights=[0.50, 0.12, 0.08, 0.14, 0.16],
         vertical_spacing=0.02,
     )
 
@@ -604,21 +604,18 @@ def plot_full_grid(
     plot_ema_cloud(ema_cloud_result, opens, highs, lows, closes,
                    timestamps=timestamps, fig=fig, row=1, col=1)
 
-    # Row 2: DSTFS Bias
-    plot_dstfs_bias(dstfs_result, timestamps=timestamps, fig=fig, row=2, col=1)
-
-    # Row 3: MC Warnings Squares
+    # Row 2: MC Warnings Squares
     plot_mc_warnings_squares(mc_result, dstfs_result,
-                             timestamps=timestamps, fig=fig, row=3, col=1)
+                             timestamps=timestamps, fig=fig, row=2, col=1)
 
-    # Row 4: MC Warnings Totals
-    plot_mc_warnings_totals(mc_result, timestamps=timestamps, fig=fig, row=4, col=1)
+    # Row 3: MC Warnings Totals
+    plot_mc_warnings_totals(mc_result, timestamps=timestamps, fig=fig, row=3, col=1)
 
-    # Row 5: IVTS
-    plot_ivts(ivts_result, timestamps=timestamps, fig=fig, row=5, col=1)
+    # Row 4: IVTS
+    plot_ivts(ivts_result, timestamps=timestamps, fig=fig, row=4, col=1)
 
-    # Row 6: Borg Transwarp
-    plot_borg_transwarp(borg_results, timestamps=timestamps, fig=fig, row=6, col=1)
+    # Row 5: Borg Transwarp
+    plot_borg_transwarp(borg_results, timestamps=timestamps, fig=fig, row=5, col=1)
 
     # Layout
     fig.update_layout(
@@ -634,9 +631,8 @@ def plot_full_grid(
     fig.update_yaxes(side="right")
 
     # Panel-specific Y-axis settings
-    fig.update_yaxes(zeroline=False, row=2, col=1)
-    fig.update_yaxes(range=[0, 5.5], row=4, col=1)
-    fig.update_yaxes(range=[-0.2, 1.15], row=6, col=1)
+    fig.update_yaxes(range=[0, 5.5], row=3, col=1)
+    fig.update_yaxes(range=[-0.2, 1.15], row=5, col=1)
 
     # Rangebreaks on all X-axes
     rangebreaks = compute_rangebreaks(x)

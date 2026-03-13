@@ -294,15 +294,15 @@ class TestPlotFullGrid:
         )
         assert isinstance(fig, go.Figure)
 
-    def test_has_6_subplots(self) -> None:
+    def test_has_5_subplots(self) -> None:
         fig = plot_full_grid(
             self.td["ema_cloud"], self.td["dstfs"], self.td["mc"],
             self.td["ivts"], self.td["borg"],
             self.data["open"], self.data["high"],
             self.data["low"], self.data["close"],
         )
-        # 6 rows → yaxis through yaxis6
-        assert fig.layout.yaxis6 is not None
+        # 5 rows → yaxis through yaxis5
+        assert fig.layout.yaxis5 is not None
 
     def test_layout_dimensions(self) -> None:
         fig = plot_full_grid(
@@ -330,7 +330,7 @@ class TestPlotFullGrid:
             self.data["open"], self.data["high"],
             self.data["low"], self.data["close"],
         )
-        for i in range(1, 7):
+        for i in range(1, 6):
             yaxis = getattr(fig.layout, f"yaxis{i}" if i > 1 else "yaxis")
             assert yaxis.side == "right"
 
@@ -352,5 +352,5 @@ class TestPlotFullGrid:
             self.data["low"], self.data["close"],
         )
         bar_traces = [t for t in fig.data if isinstance(t, go.Bar)]
-        # At least 3: DSTFS bias + MC totals + Borg transwarp
-        assert len(bar_traces) >= 3
+        # At least 2: MC totals + Borg transwarp
+        assert len(bar_traces) >= 2
