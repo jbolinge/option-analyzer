@@ -496,6 +496,78 @@ def plot_borg_transwarp(
 
 
 # ---------------------------------------------------------------------------
+# Borg Candlestick (2-panel debugging chart)
+# ---------------------------------------------------------------------------
+
+
+def plot_borg_candlestick(
+    borg_results: list[BorgTranswarpResult],
+    opens: npt.NDArray[np.float64],
+    highs: npt.NDArray[np.float64],
+    lows: npt.NDArray[np.float64],
+    closes: npt.NDArray[np.float64],
+    timestamps: Sequence[Any] | None = None,
+    title: str = "Borg Transwarp Analysis",
+) -> go.Figure:
+    """Two-panel chart: SPX candlestick (top 70%), Borg bars (bottom 30%)."""
+    x = list(timestamps) if timestamps is not None else list(range(len(closes)))
+
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        row_heights=[0.7, 0.3], vertical_spacing=0.05,
+    )
+
+    # Top panel: candlestick with DSTFS candle colors
+    fig.add_trace(
+        go.Candlestick(
+            x=x, open=opens, high=highs, low=lows, close=closes,
+            increasing_line_color=DSTFS_PALETTE["candle_up"],
+            decreasing_line_color=DSTFS_PALETTE["candle_down"],
+            name="Price",
+        ),
+        row=1, col=1,
+    )
+
+    # Last-close price badge
+    last_close = float(closes[-1])
+    last_color = (
+        DSTFS_PALETTE["candle_up"]
+        if last_close >= float(opens[-1])
+        else DSTFS_PALETTE["candle_down"]
+    )
+    fig.add_annotation(
+        x=1.0, xref="paper", xanchor="left",
+        y=last_close, yref="y",
+        text=f" {last_close:,.2f} ",
+        showarrow=False,
+        font=dict(color="#000000", size=11),
+        bgcolor=last_color, borderpad=2,
+    )
+
+    # Bottom panel: reuse existing Borg Transwarp plot
+    plot_borg_transwarp(borg_results, timestamps=timestamps, fig=fig, row=2, col=1)
+
+    # Layout
+    fig.update_layout(
+        title=title,
+        yaxis_title="Price",
+        yaxis2_title="QQQ Alloc",
+        showlegend=False,
+        bargap=0.5,
+        xaxis_rangeslider_visible=False,
+    )
+
+    fig.update_yaxes(side="right")
+    fig.update_yaxes(range=[-0.2, 1.15], row=2, col=1)
+
+    rangebreaks = compute_rangebreaks(x)
+    if rangebreaks:
+        fig.update_xaxes(rangebreaks=rangebreaks)
+
+    return apply_theme(fig)
+
+
+# ---------------------------------------------------------------------------
 # Full Grid Composite
 # ---------------------------------------------------------------------------
 
