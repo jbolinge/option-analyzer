@@ -7,53 +7,10 @@ from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
-import talib
 
-
-def sma(
-    close: npt.NDArray[np.float64], period: int = 50
-) -> npt.NDArray[np.float64]:
-    """Simple Moving Average via TA-Lib."""
-    result: npt.NDArray[np.float64] = talib.SMA(close, timeperiod=period)
-    return result
-
-
-def wma(
-    close: npt.NDArray[np.float64], period: int
-) -> npt.NDArray[np.float64]:
-    """Weighted Moving Average via TA-Lib."""
-    result: npt.NDArray[np.float64] = talib.WMA(close, timeperiod=period)
-    return result
-
-
-def hma(
-    close: npt.NDArray[np.float64], period: int = 15
-) -> npt.NDArray[np.float64]:
-    """Hull Moving Average: WMA(2*WMA(n/2) - WMA(n), sqrt(n))."""
-    half_period = max(int(period / 2), 1)
-    sqrt_period = max(int(np.sqrt(period)), 1)
-
-    wma_half = wma(close, half_period)
-    wma_full = wma(close, period)
-
-    diff = 2.0 * wma_half - wma_full
-    result: npt.NDArray[np.float64] = wma(diff, sqrt_period)
-    return result
-
-
-def _direction(
-    arr: npt.NDArray[np.float64],
-) -> npt.NDArray[np.float64]:
-    """Compute direction: +1 if rising, -1 if falling. NaN where input is NaN."""
-    direction = np.full_like(arr, np.nan)
-    for i in range(1, len(arr)):
-        if np.isnan(arr[i]) or np.isnan(arr[i - 1]):
-            direction[i] = np.nan
-        elif arr[i] > arr[i - 1]:
-            direction[i] = 1.0
-        else:
-            direction[i] = -1.0
-    return direction
+from options_analyzer.engine.ta_utils import direction as _direction
+from options_analyzer.engine.ta_utils import hma, sma
+from options_analyzer.engine.ta_utils import wma as wma  # noqa: F401 — re-export
 
 
 @dataclass(frozen=True)

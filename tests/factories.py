@@ -247,6 +247,40 @@ def make_ohlcv_arrays(
     }
 
 
+def make_vix_arrays(
+    n: int = 200,
+    vix_base: float = 20.0,
+    vix3m_base: float = 22.0,
+    seed: int = 42,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Create synthetic VIX and VIX3M close arrays."""
+    rng = np.random.default_rng(seed)
+    vix = vix_base + np.cumsum(rng.normal(0, 0.5, n))
+    vix3m = vix3m_base + np.cumsum(rng.normal(0, 0.3, n))
+    vix = np.clip(vix, 10.0, 80.0).astype(np.float64)
+    vix3m = np.clip(vix3m, 10.0, 80.0).astype(np.float64)
+    return vix, vix3m
+
+
+def make_multi_ticker_closes(
+    tickers: list[str] | None = None,
+    n: int = 300,
+    seed: int = 42,
+) -> dict[str, npt.NDArray[np.float64]]:
+    """Create synthetic close arrays for multiple tickers."""
+    if tickers is None:
+        from options_analyzer.engine.borg_transwarp import BORG_TICKERS
+
+        tickers = BORG_TICKERS
+    rng = np.random.default_rng(seed)
+    closes: dict[str, npt.NDArray[np.float64]] = {}
+    for ticker in tickers:
+        base = rng.uniform(50, 500)
+        walk = np.cumsum(rng.normal(0, 1, n))
+        closes[ticker] = np.clip(base + walk, 10.0, 1000.0).astype(np.float64)
+    return closes
+
+
 def make_iron_condor(
     underlying: str,
     strikes: list[Decimal],

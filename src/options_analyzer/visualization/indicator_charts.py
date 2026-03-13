@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Sequence
 from typing import Any
 
@@ -12,93 +11,22 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from options_analyzer.engine.indicators import DSTFSResult
+from options_analyzer.visualization.chart_utils import (
+    add_colored_line as _add_colored_line,
+)
+from options_analyzer.visualization.chart_utils import (
+    compute_rangebreaks as _compute_rangebreaks,
+)
 from options_analyzer.visualization.theme import (
     DSTFS_PALETTE,
-    LINE_WIDTH,
     apply_theme,
 )
-
-
-def _compute_rangebreaks(x: Sequence[Any]) -> list[dict[str, Any]]:
-    """Compute Plotly rangebreaks to hide weekends and holidays from a date axis."""
-    if not x or not isinstance(x[0], (dt.datetime, dt.date)):
-        return []
-
-    dates = [v.date() if isinstance(v, dt.datetime) else v for v in x]
-    holidays: list[str] = []
-    one_day = dt.timedelta(days=1)
-
-    for i in range(1, len(dates)):
-        d = dates[i - 1] + one_day
-        while d < dates[i]:
-            if d.weekday() < 5:  # weekday gap = holiday
-                holidays.append(d.isoformat())
-            d += one_day
-
-    breaks: list[dict[str, Any]] = [{"bounds": ["sat", "mon"]}]
-    if holidays:
-        breaks.append({"values": holidays})
-    return breaks
 
 
 def _bias_color(value: float | int) -> str:
     """Map a bias value to its DSTFS_PALETTE color."""
     key = f"bias_{int(value)}"
     return DSTFS_PALETTE[key]
-
-
-def _add_colored_line(
-    fig: go.Figure,
-    x: Sequence[Any],
-    y: npt.NDArray[np.float64],
-    is_rising: npt.NDArray[np.float64],
-    rising_color: str,
-    falling_color: str,
-    rising_name: str,
-    falling_name: str,
-    row: int,
-    col: int,
-) -> None:
-    """Add a color-segmented line using NaN-gap technique."""
-    rising_y = np.where(is_rising == 1.0, y, np.nan)
-    falling_y = np.where(is_rising == -1.0, y, np.nan)
-
-    # Bridge transitions so color segments visually connect
-    for i in range(1, len(y)):
-        if np.isnan(y[i]) or np.isnan(y[i - 1]):
-            continue
-        prev, curr = is_rising[i - 1], is_rising[i]
-        # rising → falling: extend rising one step to connect
-        if prev == 1.0 and curr == -1.0:
-            rising_y[i] = y[i]
-        # falling → rising: extend falling one step to connect
-        elif prev == -1.0 and curr == 1.0:
-            falling_y[i] = y[i]
-
-    fig.add_trace(
-        go.Scatter(
-            x=list(x),
-            y=rising_y,
-            mode="lines",
-            name=rising_name,
-            line=dict(color=rising_color, width=LINE_WIDTH),
-            connectgaps=False,
-        ),
-        row=row,
-        col=col,
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=list(x),
-            y=falling_y,
-            mode="lines",
-            name=falling_name,
-            line=dict(color=falling_color, width=LINE_WIDTH),
-            connectgaps=False,
-        ),
-        row=row,
-        col=col,
-    )
 
 
 def plot_dstfs(

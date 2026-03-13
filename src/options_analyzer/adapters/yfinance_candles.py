@@ -24,6 +24,8 @@ _SYMBOL_MAP: dict[str, str] = {
     "$DJX": "^DJI",
     "VIX": "^VIX",
     "$VIX": "^VIX",
+    "VIX3M": "^VIX3M",
+    "$VIX3M": "^VIX3M",
 }
 
 # Map our interval strings to yfinance intervals
