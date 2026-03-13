@@ -19,6 +19,7 @@ class TastyTradeSession:
     def __init__(self, config: ProviderConfig) -> None:
         self._config = config
         self._session: Session | None = None
+        self.use_dxlink_candles: bool = config.use_dxlink_candles
 
     @property
     def session(self) -> Session:

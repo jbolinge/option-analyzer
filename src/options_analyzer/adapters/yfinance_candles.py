@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from datetime import UTC, datetime, timedelta
 
 import yfinance as yf  # type: ignore[import-untyped]
@@ -11,6 +12,10 @@ import yfinance as yf  # type: ignore[import-untyped]
 from options_analyzer.domain.candles import CandleBar, CandleSeries
 
 logger = logging.getLogger(__name__)
+
+# yfinance is not thread-safe — concurrent yf.download() calls corrupt shared
+# internal state, causing wrong data or DataFrame structure errors.
+_YF_LOCK = threading.Lock()
 
 # Map internal symbols to yfinance tickers
 _SYMBOL_MAP: dict[str, str] = {
@@ -50,14 +55,15 @@ def _download_sync(
 ) -> list[CandleBar]:
     """Synchronous yfinance download — run in executor."""
     yf_interval = _INTERVAL_MAP.get(interval, interval)
-    df = yf.download(
-        ticker,
-        start=start.strftime("%Y-%m-%d"),
-        end=end.strftime("%Y-%m-%d"),
-        interval=yf_interval,
-        progress=False,
-        auto_adjust=True,
-    )
+    with _YF_LOCK:
+        df = yf.download(
+            ticker,
+            start=start.strftime("%Y-%m-%d"),
+            end=end.strftime("%Y-%m-%d"),
+            interval=yf_interval,
+            progress=False,
+            auto_adjust=True,
+        )
     if df is None or df.empty:
         return []
 
@@ -66,8 +72,6 @@ def _download_sync(
         df.columns = df.columns.droplevel("Ticker")
 
     bars: list[CandleBar] = []
-    # Determine the original symbol (strip $ prefix for bar symbol)
-    bar_symbol = ticker.lstrip("^")
     # Reverse-map back to our internal symbol
     reverse = {v: k for k, v in _SYMBOL_MAP.items() if not k.startswith("$")}
     bar_symbol = reverse.get(ticker, ticker)

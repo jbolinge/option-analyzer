@@ -130,20 +130,29 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         Index symbols (e.g. SPX) are prefixed with '$' per dxfeed convention.
         Falls back to yfinance if DXLink returns no events or fails.
         """
-        # dxfeed convention: index symbols need '$' prefix
-        streamer_symbol = f"${symbol}" if not symbol.startswith("$") else symbol
-        start_time = datetime.now(tz=UTC) - timedelta(days=days_back)
+        use_dxlink = getattr(self._session, "use_dxlink_candles", True)
 
-        candle_events = await self._fetch_candle_events(
-            streamer_symbol, interval, start_time, timeout_seconds=3,
-        )
+        candle_events: list[Candle] = []
+        if use_dxlink:
+            # dxfeed convention: index symbols need '$' prefix
+            streamer_symbol = f"${symbol}" if not symbol.startswith("$") else symbol
+            start_time = datetime.now(tz=UTC) - timedelta(days=days_back)
+
+            candle_events = await self._fetch_candle_events(
+                streamer_symbol, interval, start_time, timeout_seconds=3,
+            )
 
         if not candle_events:
-            logger.warning(
-                "DXLink returned 0 candle events for %s, "
-                "falling back to yfinance",
-                streamer_symbol,
-            )
+            if use_dxlink:
+                logger.warning(
+                    "DXLink returned 0 candle events for %s, "
+                    "falling back to yfinance",
+                    symbol,
+                )
+            else:
+                logger.info(
+                    "DXLink candles disabled, using yfinance for %s", symbol,
+                )
             from options_analyzer.adapters.yfinance_candles import (
                 fetch_candles_yfinance,
             )

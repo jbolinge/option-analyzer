@@ -14,6 +14,7 @@ from options_analyzer.domain.enums import OptionType
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
 from options_analyzer.domain.streaming import GreeksUpdate
+from options_analyzer.domain.candles import CandleBar, CandleSeries
 from options_analyzer.ports.market_data import MarketDataProvider
 
 
@@ -425,3 +426,109 @@ class TestStreamGreeksAndQuotesAutoResolves:
             assert isinstance(results[0], GreeksUpdate)
             # Canonical symbol should be used, not streamer symbol
             assert results[0].event_symbol == "SPY  260220C00450000"
+
+
+def _make_candle_bar(symbol: str = "SPY") -> CandleBar:
+    from datetime import UTC, datetime
+
+    return CandleBar(
+        symbol=symbol,
+        timestamp=datetime(2026, 1, 15, tzinfo=UTC),
+        open=450.0,
+        high=455.0,
+        low=449.0,
+        close=453.0,
+        volume=1000000,
+    )
+
+
+class TestGetCandles:
+    @pytest.mark.asyncio
+    async def test_falls_back_to_yfinance_when_dxlink_returns_empty(
+        self, mock_session: MagicMock
+    ) -> None:
+        mock_session.use_dxlink_candles = True
+        expected_series = CandleSeries(bars=[_make_candle_bar("SPY")])
+
+        with (
+            patch.object(
+                TastyTradeMarketDataProvider,
+                "_fetch_candle_events",
+                new_callable=AsyncMock,
+                return_value=[],
+            ) as mock_fetch,
+            patch(
+                "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
+                new_callable=AsyncMock,
+                return_value=expected_series,
+            ) as mock_yfinance,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_candles("SPY", "1d", 365)
+
+            mock_fetch.assert_called_once()
+            mock_yfinance.assert_called_once_with("SPY", "1d", 365)
+            assert result == expected_series
+
+    @pytest.mark.asyncio
+    async def test_skips_dxlink_when_disabled(
+        self, mock_session: MagicMock
+    ) -> None:
+        mock_session.use_dxlink_candles = False
+        expected_series = CandleSeries(bars=[_make_candle_bar("SPY")])
+
+        with (
+            patch.object(
+                TastyTradeMarketDataProvider,
+                "_fetch_candle_events",
+                new_callable=AsyncMock,
+            ) as mock_fetch,
+            patch(
+                "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
+                new_callable=AsyncMock,
+                return_value=expected_series,
+            ) as mock_yfinance,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_candles("SPY", "1d", 365)
+
+            mock_fetch.assert_not_called()
+            mock_yfinance.assert_called_once_with("SPY", "1d", 365)
+            assert result == expected_series
+
+    @pytest.mark.asyncio
+    async def test_returns_dxlink_data_when_available(
+        self, mock_session: MagicMock
+    ) -> None:
+        mock_session.use_dxlink_candles = True
+
+        mock_event = MagicMock()
+        mock_event.time = 1705334400000
+        mock_event.remove = False
+        mock_event.snapshot_end = True
+        mock_event.snapshot_snip = False
+
+        mock_bar = _make_candle_bar("SPY")
+
+        with (
+            patch.object(
+                TastyTradeMarketDataProvider,
+                "_fetch_candle_events",
+                new_callable=AsyncMock,
+                return_value=[mock_event],
+            ) as mock_fetch,
+            patch(
+                "options_analyzer.adapters.tastytrade.market_data.map_candle_to_bar",
+                return_value=mock_bar,
+            ),
+            patch(
+                "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
+                new_callable=AsyncMock,
+            ) as mock_yfinance,
+        ):
+            provider = TastyTradeMarketDataProvider(mock_session)
+            result = await provider.get_candles("SPY", "1d", 365)
+
+            mock_fetch.assert_called_once()
+            mock_yfinance.assert_not_called()
+            assert len(result.bars) == 1
