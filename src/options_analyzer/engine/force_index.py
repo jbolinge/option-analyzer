@@ -34,6 +34,7 @@ def compute_force_index(
     close: npt.NDArray[np.float64],
     volume: npt.NDArray[np.float64],
     period: int = 13,
+    threshold: float = 0.0,
 ) -> ForceIndexResult:
     """Compute Elder's Force Index for a single instrument.
 
@@ -42,6 +43,10 @@ def compute_force_index(
     close : closing prices
     volume : volume array
     period : EMA smoothing period (default 13)
+    threshold : smoothed force index value at or below which a warning
+        triggers.  The PineScript reference divides the raw force index
+        by 1 000 000 and compares against -15 (ES) / -141 (SPY).
+        Pass the equivalent *raw* threshold here (e.g. -15_000_000).
 
     Returns
     -------
@@ -54,10 +59,10 @@ def compute_force_index(
 
     smoothed = ema(raw, period)
 
-    # Warning: negative smoothed force index = selling pressure
+    # Warning: smoothed force index at or below threshold = selling pressure
     warning = np.full_like(close, np.nan)
     valid = ~np.isnan(smoothed)
-    warning[valid] = np.where(smoothed[valid] < 0, 1.0, 0.0)
+    warning[valid] = np.where(smoothed[valid] <= threshold, 1.0, 0.0)
 
     return ForceIndexResult(raw=raw, smoothed=smoothed, warning=warning)
 
@@ -68,6 +73,8 @@ def compute_force_index_dual(
     close2: npt.NDArray[np.float64],
     volume2: npt.NDArray[np.float64],
     period: int = 13,
+    threshold1: float = -15_000_000.0,
+    threshold2: float = -141_000_000.0,
 ) -> ForceIndexDualResult:
     """Compute dual-instrument Force Index.
 
@@ -75,12 +82,17 @@ def compute_force_index_dual(
 
     Parameters
     ----------
-    close1, volume1 : Primary instrument (e.g., SPY)
-    close2, volume2 : Secondary instrument (e.g., QQQ)
+    close1, volume1 : Primary instrument (e.g., ES futures)
+    close2, volume2 : Secondary instrument (e.g., SPY)
     period : EMA smoothing period (default 13)
+    threshold1 : Warning threshold for primary instrument.
+        Default -15 000 000 matches the PineScript ``fi_es <= -15``
+        (after ×1 000 000 de-normalization).
+    threshold2 : Warning threshold for secondary instrument.
+        Default -141 000 000 matches the PineScript ``fi_spy <= -141``.
     """
-    primary = compute_force_index(close1, volume1, period)
-    secondary = compute_force_index(close2, volume2, period)
+    primary = compute_force_index(close1, volume1, period, threshold=threshold1)
+    secondary = compute_force_index(close2, volume2, period, threshold=threshold2)
 
     # Severity: count how many instruments show selling pressure
     severity = np.full_like(close1, np.nan)
