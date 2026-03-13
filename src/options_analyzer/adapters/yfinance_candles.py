@@ -6,7 +6,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
-import yfinance as yf
+import yfinance as yf  # type: ignore[import-untyped]
 
 from options_analyzer.domain.candles import CandleBar, CandleSeries
 
@@ -76,7 +76,7 @@ def _download_sync(
         bars.append(
             CandleBar(
                 symbol=bar_symbol,
-                timestamp=ts.to_pydatetime().replace(tzinfo=UTC),  # type: ignore[union-attr]
+                timestamp=ts.to_pydatetime().replace(tzinfo=UTC),
                 open=float(row["Open"]),
                 high=float(row["High"]),
                 low=float(row["Low"]),

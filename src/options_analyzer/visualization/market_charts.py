@@ -58,6 +58,7 @@ def plot_ema_cloud(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     # Candlestick
     fig.add_trace(
@@ -141,6 +142,7 @@ def plot_dstfs_bias(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     valid_mask = ~np.isnan(result.total_bias)
     bias_colors = [
@@ -219,6 +221,7 @@ def plot_mc_warnings_squares(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     # Build per-color groups to minimize trace count
     color_groups: dict[str, tuple[list[Any], list[float]]] = {}
@@ -319,6 +322,7 @@ def plot_mc_warnings_totals(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     default_tc = MC_WARNINGS_PALETTE["total_white"]
     bar_colors = [
@@ -372,6 +376,7 @@ def plot_ivts(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     add_threshold_colored_line(
         fig, x, result.smoothed,
@@ -428,6 +433,7 @@ def plot_borg_transwarp(
     standalone = fig is None
     if standalone:
         fig = make_subplots(rows=1, cols=1)
+    assert fig is not None
 
     qqq_values = np.array([r.qqq for r in results])
 
