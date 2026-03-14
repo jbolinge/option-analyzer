@@ -12,6 +12,7 @@ class ProviderConfig(BaseModel):
     refresh_token: SecretStr
     is_paper: bool = True
     use_dxlink_candles: bool = True
+    include_latest_candle: bool = False
 
 
 class EngineConfig(BaseModel):

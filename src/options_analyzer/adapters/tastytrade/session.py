@@ -20,6 +20,7 @@ class TastyTradeSession:
         self._config = config
         self._session: Session | None = None
         self.use_dxlink_candles: bool = config.use_dxlink_candles
+        self.include_latest_candle: bool = config.include_latest_candle
 
     @property
     def session(self) -> Session:
