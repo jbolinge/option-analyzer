@@ -71,6 +71,23 @@ def map_greeks_to_first_order(greeks: Greeks | Any) -> FirstOrderGreeks:
     )
 
 
+def instrument_type_for_symbol(symbol: str) -> str:
+    """Return 'INDEX' or 'EQUITY' for a given symbol.
+
+    Index symbols (SPX, VIX, VIX3M, NDX, RUT, DJX) require a different
+    TastyTrade REST API call than equities/ETFs.
+    """
+    raise NotImplementedError
+
+
+def map_market_data_to_bar(data: Any, symbol: str) -> CandleBar | None:
+    """Map a TastyTrade REST MarketData response to a domain CandleBar.
+
+    Returns None if essential OHLC fields are missing (e.g. pre-market).
+    """
+    raise NotImplementedError
+
+
 def map_candle_to_bar(
     candle: Candle | Any, symbol: str, timestamp: datetime | None = None
 ) -> CandleBar:
