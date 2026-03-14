@@ -71,21 +71,64 @@ def map_greeks_to_first_order(greeks: Greeks | Any) -> FirstOrderGreeks:
     )
 
 
+_INDEX_SYMBOLS: frozenset[str] = frozenset(
+    {"SPX", "VIX", "VIX3M", "NDX", "RUT", "DJX"}
+)
+
+
 def instrument_type_for_symbol(symbol: str) -> str:
     """Return 'INDEX' or 'EQUITY' for a given symbol.
 
     Index symbols (SPX, VIX, VIX3M, NDX, RUT, DJX) require a different
     TastyTrade REST API call than equities/ETFs.
     """
-    raise NotImplementedError
+    clean = symbol.lstrip("$")
+    return "INDEX" if clean in _INDEX_SYMBOLS else "EQUITY"
 
 
 def map_market_data_to_bar(data: Any, symbol: str) -> CandleBar | None:
     """Map a TastyTrade REST MarketData response to a domain CandleBar.
 
-    Returns None if essential OHLC fields are missing (e.g. pre-market).
+    Returns None if essential OHLC fields (open, last) are missing —
+    e.g. pre-market before an open price exists.
     """
-    raise NotImplementedError
+    import datetime as dt_mod
+
+    open_price = getattr(data, "open", None)
+    close_price = getattr(data, "last", None)
+
+    if open_price is None or close_price is None:
+        return None
+
+    high_price = getattr(data, "day_high_price", None)
+    if high_price is None:
+        high_price = getattr(data, "day_high", None)
+    if high_price is None:
+        high_price = open_price
+
+    low_price = getattr(data, "day_low_price", None)
+    if low_price is None:
+        low_price = getattr(data, "day_low", None)
+    if low_price is None:
+        low_price = open_price
+
+    volume = getattr(data, "volume", None)
+
+    ts = dt_mod.datetime.combine(
+        data.summary_date,
+        dt_mod.time(16, 0),
+        tzinfo=dt_mod.UTC,
+    )
+
+    return CandleBar(
+        symbol=symbol,
+        timestamp=ts,
+        open=float(open_price),
+        high=float(high_price),
+        low=float(low_price),
+        close=float(close_price),
+        volume=int(volume) if volume else 0,
+    )
 
 
 def map_candle_to_bar(
