@@ -662,7 +662,7 @@ class TestGetCandlesWithLatestCandle:
                 return_value=[],
             ),
             patch(
-                "options_analyzer.adapters.tastytrade.market_data.fetch_candles_yfinance",
+                "options_analyzer.adapters.yfinance_candles.fetch_candles_yfinance",
                 new_callable=AsyncMock,
                 return_value=mock_series,
             ),

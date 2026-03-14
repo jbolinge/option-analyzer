@@ -12,15 +12,17 @@ from typing import TYPE_CHECKING
 from tastytrade import DXLinkStreamer
 from tastytrade.dxfeed import Candle, Greeks, Quote
 from tastytrade.instruments import get_option_chain
-from tastytrade.market_data import get_market_data
+from tastytrade.market_data import get_market_data, get_market_data_by_type
 from tastytrade.order import InstrumentType
 
 from options_analyzer.adapters.tastytrade.mapping import (
+    instrument_type_for_symbol,
     map_candle_to_bar,
     map_greeks_to_first_order,
+    map_market_data_to_bar,
     map_option_to_contract,
 )
-from options_analyzer.domain.candles import CandleSeries
+from options_analyzer.domain.candles import CandleBar, CandleSeries
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
 from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
@@ -129,6 +131,8 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
 
         Index symbols (e.g. SPX) are prefixed with '$' per dxfeed convention.
         Falls back to yfinance if DXLink returns no events or fails.
+        If include_latest_candle is enabled, appends today's OHLCV from the
+        TastyTrade REST API.
         """
         use_dxlink = getattr(self._session, "use_dxlink_candles", True)
 
@@ -157,19 +161,26 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
                 fetch_candles_yfinance,
             )
 
-            return await fetch_candles_yfinance(symbol, interval, days_back)
+            series = await fetch_candles_yfinance(symbol, interval, days_back)
+        else:
+            # Sort by timestamp, deduplicate
+            seen_times: set[object] = set()
+            unique_bars = []
+            for event in sorted(candle_events, key=lambda c: c.time):
+                if event.time in seen_times:
+                    continue
+                seen_times.add(event.time)
+                bar = map_candle_to_bar(event, symbol)
+                unique_bars.append(bar)
 
-        # Sort by timestamp, deduplicate
-        seen_times: set[object] = set()
-        unique_bars = []
-        for event in sorted(candle_events, key=lambda c: c.time):
-            if event.time in seen_times:
-                continue
-            seen_times.add(event.time)
-            bar = map_candle_to_bar(event, symbol)
-            unique_bars.append(bar)
+            series = CandleSeries(bars=unique_bars)
 
-        return CandleSeries(bars=unique_bars)
+        # Append latest candle from REST API if enabled
+        include_latest = getattr(self._session, "include_latest_candle", False)
+        if include_latest and interval == "1d":
+            series = await self._append_latest_bar(series, symbol)
+
+        return series
 
     async def _fetch_candle_events(
         self,
@@ -203,6 +214,53 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
                 "Candle fetch failed for %s: %s", streamer_symbol, exc,
             )
         return events
+
+    async def _fetch_latest_bar(self, symbol: str) -> CandleBar | None:
+        """Fetch today's OHLCV from TastyTrade REST API.
+
+        Returns None on any failure — caller falls back to historical only.
+        """
+        try:
+            clean_symbol = symbol.lstrip("$")
+            if instrument_type_for_symbol(clean_symbol) == "INDEX":
+                data_list = await get_market_data_by_type(
+                    self._session.session, indices=[clean_symbol],
+                )
+                if not data_list:
+                    return None
+                data = data_list[0]
+            else:
+                data = await get_market_data(
+                    self._session.session,
+                    clean_symbol,
+                    InstrumentType.EQUITY,
+                )
+            return map_market_data_to_bar(data, clean_symbol)
+        except Exception as exc:
+            logger.debug(
+                "Latest candle fetch failed for %s: %s", symbol, exc,
+            )
+            return None
+
+    async def _append_latest_bar(
+        self, series: CandleSeries, symbol: str,
+    ) -> CandleSeries:
+        """Append or replace today's bar from the REST API.
+
+        If the last historical bar has the same date as the latest bar,
+        replace it (REST data is more current). Otherwise, append.
+        """
+        latest = await self._fetch_latest_bar(symbol)
+        if latest is None:
+            return series
+
+        bars = list(series.bars)
+        if bars and bars[-1].timestamp.date() == latest.timestamp.date():
+            bars[-1] = latest
+        else:
+            bars.append(latest)
+
+        return CandleSeries(bars=bars)
 
     async def stream_greeks_and_quotes(
         self,
