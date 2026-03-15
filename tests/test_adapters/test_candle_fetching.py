@@ -695,3 +695,114 @@ class TestGetCandlesWithLatestCandle:
             await provider.get_candles("SPX", interval="1d", days_back=30)
 
         mock_append.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Tests for get_candles_batch
+# ---------------------------------------------------------------------------
+
+
+def _make_series_for_symbol(
+    symbol: str, days: list[int],
+) -> CandleSeries:
+    """Create a CandleSeries with bars on specific days of June 2024."""
+    bars = [
+        CandleBar(
+            symbol=symbol,
+            timestamp=datetime(2024, 6, d, 16, 0, tzinfo=UTC),
+            open=100.0,
+            high=110.0,
+            low=90.0,
+            close=100.0 + d,
+            volume=1000 * d,
+        )
+        for d in days
+    ]
+    return CandleSeries(bars=bars)
+
+
+class TestGetCandlesBatch:
+    """Tests for get_candles_batch with alignment."""
+
+    @pytest.mark.asyncio
+    async def test_different_length_series_are_aligned(self) -> None:
+        """Series with different trading calendars get aligned to common dates."""
+        provider = _make_provider()
+        # VIX has an extra day (day 6), VIX3M does not
+        vix_series = _make_series_for_symbol("VIX", [1, 2, 3, 4, 5, 6])
+        vix3m_series = _make_series_for_symbol("VIX3M", [1, 2, 3, 4, 5])
+
+        async def mock_get_candles(
+            symbol: str, interval: str = "1d", days_back: int = 365,
+        ) -> CandleSeries:
+            return {"VIX": vix_series, "VIX3M": vix3m_series}[symbol]
+
+        with patch.object(provider, "get_candles", side_effect=mock_get_candles):
+            result = await provider.get_candles_batch(
+                ["VIX", "VIX3M"], interval="1d", days_back=365,
+            )
+
+        assert len(result) == 2
+        assert len(result["VIX"]) == 5
+        assert len(result["VIX3M"]) == 5
+        assert result["VIX"].timestamps == result["VIX3M"].timestamps
+
+    @pytest.mark.asyncio
+    async def test_failed_symbols_excluded_with_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Symbols that fail to fetch are excluded from the result."""
+        provider = _make_provider()
+        spy_series = _make_series_for_symbol("SPY", [1, 2, 3])
+
+        async def mock_get_candles(
+            symbol: str, interval: str = "1d", days_back: int = 365,
+        ) -> CandleSeries:
+            if symbol == "BAD":
+                raise RuntimeError("API error")
+            return spy_series
+
+        with patch.object(provider, "get_candles", side_effect=mock_get_candles):
+            import logging
+            with caplog.at_level(logging.WARNING):
+                result = await provider.get_candles_batch(
+                    ["SPY", "BAD"], interval="1d", days_back=365,
+                )
+
+        assert "BAD" not in result
+        assert "SPY" in result
+        assert "BAD" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_single_symbol_returns_unmodified(self) -> None:
+        """A single symbol should be returned without alignment issues."""
+        provider = _make_provider()
+        spy_series = _make_series_for_symbol("SPY", [1, 2, 3])
+
+        async def mock_get_candles(
+            symbol: str, interval: str = "1d", days_back: int = 365,
+        ) -> CandleSeries:
+            return spy_series
+
+        with patch.object(provider, "get_candles", side_effect=mock_get_candles):
+            result = await provider.get_candles_batch(
+                ["SPY"], interval="1d", days_back=365,
+            )
+
+        assert len(result["SPY"]) == 3
+
+    @pytest.mark.asyncio
+    async def test_all_symbols_fetched_concurrently(self) -> None:
+        """All symbols should be fetched (verifies get_candles called for each)."""
+        provider = _make_provider()
+        symbols = ["SPY", "QQQ", "VIX"]
+        series_map = {s: _make_series_for_symbol(s, [1, 2, 3]) for s in symbols}
+
+        async def mock_get_candles(
+            symbol: str, interval: str = "1d", days_back: int = 365,
+        ) -> CandleSeries:
+            return series_map[symbol]
+
+        with patch.object(provider, "get_candles", side_effect=mock_get_candles) as mock:
+            result = await provider.get_candles_batch(symbols, interval="1d", days_back=30)
+
+        assert mock.call_count == 3
+        assert set(result.keys()) == set(symbols)

@@ -22,7 +22,7 @@ from options_analyzer.adapters.tastytrade.mapping import (
     map_market_data_to_bar,
     map_option_to_contract,
 )
-from options_analyzer.domain.candles import CandleBar, CandleSeries
+from options_analyzer.domain.candles import CandleBar, CandleSeries, align_series
 from options_analyzer.domain.greeks import FirstOrderGreeks
 from options_analyzer.domain.models import OptionContract
 from options_analyzer.domain.streaming import GreeksUpdate, StreamUpdate
@@ -261,6 +261,65 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
             bars.append(latest)
 
         return CandleSeries(bars=bars)
+
+    async def get_candles_batch(
+        self,
+        symbols: list[str],
+        interval: str = "1d",
+        days_back: int = 365,
+    ) -> dict[str, CandleSeries]:
+        """Fetch candles for multiple symbols concurrently, aligned to common timestamps."""
+        tasks = {
+            sym: asyncio.create_task(self.get_candles(sym, interval, days_back))
+            for sym in symbols
+        }
+        results: dict[str, CandleSeries] = {}
+        for sym, task in tasks.items():
+            try:
+                results[sym] = await task
+            except Exception as exc:
+                logger.warning("Failed to fetch %s: %s", sym, exc)
+
+        # Print per-symbol bar counts
+        for sym, series in results.items():
+            print(f"  {sym}: {len(series)} bars")
+
+        # Align to common timestamps
+        if len(results) >= 2:
+            ordered_symbols = [s for s in symbols if s in results]
+            pre_align_counts = {s: len(results[s]) for s in ordered_symbols}
+            aligned = align_series(*(results[s] for s in ordered_symbols))
+            results = dict(zip(ordered_symbols, aligned))
+
+            # Log alignment summary if any trimming occurred
+            aligned_len = len(next(iter(results.values())))
+            trimmed = {
+                s: pre_align_counts[s] - aligned_len
+                for s in ordered_symbols
+                if pre_align_counts[s] != aligned_len
+            }
+            if trimmed:
+                logger.info(
+                    "Aligned %d symbols to %d common bars (trimmed: %s)",
+                    len(results), aligned_len,
+                    ", ".join(f"{s}:-{n}" for s, n in trimmed.items()),
+                )
+
+        if results:
+            any_series = next(iter(results.values()))
+            if any_series.bars:
+                ts = any_series.timestamps
+                print(
+                    f"\nFetched {len(results)}/{len(symbols)} symbols successfully "
+                    f"({len(any_series)} bars, "
+                    f"{ts[0]:%Y-%m-%d} to {ts[-1]:%Y-%m-%d})"
+                )
+            else:
+                print(f"\nFetched {len(results)}/{len(symbols)} symbols (0 bars)")
+        else:
+            print(f"\nFetched 0/{len(symbols)} symbols")
+
+        return results
 
     async def stream_greeks_and_quotes(
         self,
