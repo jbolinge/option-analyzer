@@ -726,7 +726,7 @@ class TestGetCandlesBatch:
 
     @pytest.mark.asyncio
     async def test_different_length_series_are_aligned(self) -> None:
-        """Series with different trading calendars get aligned to common dates."""
+        """Series with different trading calendars get ffill-aligned to union dates."""
         provider = _make_provider()
         # VIX has an extra day (day 6), VIX3M does not
         vix_series = _make_series_for_symbol("VIX", [1, 2, 3, 4, 5, 6])
@@ -743,9 +743,13 @@ class TestGetCandlesBatch:
             )
 
         assert len(result) == 2
-        assert len(result["VIX"]) == 5
-        assert len(result["VIX3M"]) == 5
+        # Union alignment: both series have 6 bars (days 1-6)
+        assert len(result["VIX"]) == 6
+        assert len(result["VIX3M"]) == 6
         assert result["VIX"].timestamps == result["VIX3M"].timestamps
+        # VIX3M day 6 is forward-filled (volume=0)
+        assert result["VIX3M"].bars[-1].volume == 0
+        assert result["VIX3M"].bars[-1].close == result["VIX3M"].bars[-2].close
 
     @pytest.mark.asyncio
     async def test_failed_symbols_excluded_with_warning(self, caplog: pytest.LogCaptureFixture) -> None:
