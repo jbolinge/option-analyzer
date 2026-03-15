@@ -108,12 +108,13 @@ class TestCandleSeries:
 
 def _make_series(
     symbol: str, days: list[int], base_close: float = 100.0,
+    hour: int = 16,
 ) -> CandleSeries:
     """Helper: create a CandleSeries with bars on specific days of June 2024."""
     bars = [
         CandleBar(
             symbol=symbol,
-            timestamp=datetime(2024, 6, d, 16, 0, tzinfo=UTC),
+            timestamp=datetime(2024, 6, d, hour, 0, tzinfo=UTC),
             open=base_close,
             high=base_close + 10,
             low=base_close - 10,
@@ -232,7 +233,8 @@ class TestAlignSeriesFfill:
         assert len(a2) == 3
         # Day 2 should be filled from day 1's close (100 + 1 = 101)
         filled_bar = a2.bars[1]
-        assert filled_bar.timestamp == datetime(2024, 6, 2, 16, 0, tzinfo=UTC)
+        # Timestamps normalized to midnight by _align_ffill
+        assert filled_bar.timestamp == datetime(2024, 6, 2, 0, 0, tzinfo=UTC)
         assert filled_bar.open == 101.0
         assert filled_bar.high == 101.0
         assert filled_bar.low == 101.0
@@ -250,8 +252,8 @@ class TestAlignSeriesFfill:
         assert len(a1) == 6
         assert len(a2) == 6
         assert a1.timestamps == a2.timestamps
-        # Day 6 in s2 filled from day 5 close
-        assert a2.bars[-1].timestamp == datetime(2024, 6, 6, 16, 0, tzinfo=UTC)
+        # Day 6 in s2 filled from day 5 close (timestamps normalized to midnight)
+        assert a2.bars[-1].timestamp == datetime(2024, 6, 6, 0, 0, tzinfo=UTC)
         assert a2.bars[-1].close == 105.0  # 100 + 5
         assert a2.bars[-1].volume == 0
 
@@ -266,7 +268,8 @@ class TestAlignSeriesFfill:
         assert len(a1) == 5
         # s2 has no data before day 3, so only days 3,4,5
         assert len(a2) == 3
-        assert a2.bars[0].timestamp == datetime(2024, 6, 3, 16, 0, tzinfo=UTC)
+        # Timestamps normalized to midnight by _align_ffill
+        assert a2.bars[0].timestamp == datetime(2024, 6, 3, 0, 0, tzinfo=UTC)
 
     def test_already_aligned_returns_unchanged(self) -> None:
         """Fast path: identical timestamps returns same objects."""
@@ -302,3 +305,61 @@ class TestAlignSeriesFfill:
         _, a2 = align_series(s1, s2, method="ffill")
 
         assert a2.bars[1].symbol == "VIX3M"
+
+
+class TestAlignSeriesMixedTimes:
+    """Tests for alignment when series have same dates but different time components."""
+
+    def test_ffill_no_duplicate_day_with_different_times(self) -> None:
+        """Same dates at midnight vs 16:00 should produce one bar per day, not two."""
+        from options_analyzer.domain.candles import align_series
+
+        s1 = _make_series("A", [1, 2, 3], hour=0)   # midnight
+        s2 = _make_series("B", [1, 2, 3], hour=16)   # 16:00
+        a1, a2 = align_series(s1, s2, method="ffill")
+
+        assert len(a1) == 3
+        assert len(a2) == 3
+        assert a1.timestamps == a2.timestamps
+
+    def test_different_times_same_dates_normalized(self) -> None:
+        """Series with same dates but different times get normalized, not duplicated."""
+        from options_analyzer.domain.candles import align_series
+
+        s1 = _make_series("A", [1, 2, 3], hour=0)
+        s2 = _make_series("B", [1, 2, 3], hour=16)
+        a1, a2 = align_series(s1, s2, method="ffill")
+
+        # All timestamps normalized to midnight
+        for bar in a1.bars:
+            assert bar.timestamp.hour == 0
+        for bar in a2.bars:
+            assert bar.timestamp.hour == 0
+
+    def test_mixed_times_preserves_bar_data(self) -> None:
+        """Bars with different times on same day retain original OHLCV data."""
+        from options_analyzer.domain.candles import align_series
+
+        s1 = _make_series("A", [1, 2, 3], base_close=100.0, hour=0)
+        s2 = _make_series("B", [1, 3], base_close=200.0, hour=16)
+        a1, a2 = align_series(s1, s2, method="ffill")
+
+        assert len(a1) == 3
+        assert len(a2) == 3
+        # Original close values preserved
+        np.testing.assert_array_equal(a1.closes, [101.0, 102.0, 103.0])
+        assert a2.bars[0].close == 201.0
+        assert a2.bars[1].close == 201.0  # filled from day 1
+        assert a2.bars[2].close == 203.0  # original
+
+    def test_timestamps_normalized_to_midnight(self) -> None:
+        """After ffill alignment, all timestamps have midnight time component."""
+        from options_analyzer.domain.candles import align_series
+
+        s1 = _make_series("A", [1, 2, 3], hour=0)
+        s2 = _make_series("B", [1, 3], hour=16)
+        a1, a2 = align_series(s1, s2, method="ffill")
+
+        for bar in a2.bars:
+            assert bar.timestamp.hour == 0
+            assert bar.timestamp.minute == 0

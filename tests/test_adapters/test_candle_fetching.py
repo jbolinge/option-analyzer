@@ -703,13 +703,13 @@ class TestGetCandlesWithLatestCandle:
 
 
 def _make_series_for_symbol(
-    symbol: str, days: list[int],
+    symbol: str, days: list[int], hour: int = 16,
 ) -> CandleSeries:
     """Create a CandleSeries with bars on specific days of June 2024."""
     bars = [
         CandleBar(
             symbol=symbol,
-            timestamp=datetime(2024, 6, d, 16, 0, tzinfo=UTC),
+            timestamp=datetime(2024, 6, d, hour, 0, tzinfo=UTC),
             open=100.0,
             high=110.0,
             low=90.0,
@@ -810,3 +810,47 @@ class TestGetCandlesBatch:
 
         assert mock.call_count == 3
         assert set(result.keys()) == set(symbols)
+
+    @pytest.mark.asyncio
+    async def test_mixed_time_latest_bars_no_duplicate_day(self) -> None:
+        """Symbols with different time components on last bar produce no duplicates.
+
+        Simulates: yfinance returns midnight bars, REST latest bar returns 16:00.
+        After alignment the last day should appear once, not twice.
+        """
+        provider = _make_provider()
+        # VIX: all bars at midnight (yfinance style)
+        vix_series = _make_series_for_symbol("VIX", [1, 2, 3], hour=0)
+        # VIX3M: historical at midnight, but last bar replaced at 16:00
+        vix3m_bars = [
+            CandleBar(
+                symbol="VIX3M",
+                timestamp=datetime(2024, 6, d, 0, 0, tzinfo=UTC),
+                open=100.0, high=110.0, low=90.0,
+                close=100.0 + d, volume=1000 * d,
+            )
+            for d in [1, 2]
+        ] + [
+            CandleBar(
+                symbol="VIX3M",
+                timestamp=datetime(2024, 6, 3, 16, 0, tzinfo=UTC),  # 16:00
+                open=100.0, high=110.0, low=90.0,
+                close=103.0, volume=3000,
+            )
+        ]
+        vix3m_series = CandleSeries(bars=vix3m_bars)
+
+        async def mock_get_candles(
+            symbol: str, interval: str = "1d", days_back: int = 365,
+        ) -> CandleSeries:
+            return {"VIX": vix_series, "VIX3M": vix3m_series}[symbol]
+
+        with patch.object(provider, "get_candles", side_effect=mock_get_candles):
+            result = await provider.get_candles_batch(
+                ["VIX", "VIX3M"], interval="1d", days_back=365,
+            )
+
+        # Both series should have exactly 3 bars — no duplicate day 3
+        assert len(result["VIX"]) == 3
+        assert len(result["VIX3M"]) == 3
+        assert result["VIX"].timestamps == result["VIX3M"].timestamps

@@ -59,6 +59,16 @@ class CandleSeries(BaseModel):
         return [b.timestamp for b in self.bars]
 
 
+def _normalize_daily_ts(ts: datetime) -> datetime:
+    """Normalize a timestamp to midnight UTC (date-only alignment).
+
+    Daily candle bars represent whole days — the time component is meaningless
+    for alignment.  Normalizing ensures that ``2026-03-14 00:00`` and
+    ``2026-03-14 16:00`` map to the same key.
+    """
+    return ts.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def align_series(
     *series: CandleSeries,
     method: Literal["intersect", "ffill"] = "ffill",
@@ -104,23 +114,32 @@ def _align_intersect(*series: CandleSeries) -> tuple[CandleSeries, ...]:
 
 
 def _align_ffill(*series: CandleSeries) -> tuple[CandleSeries, ...]:
-    """Union of all timestamps, forward-filling gaps with previous close."""
-    # Compute sorted union of all timestamps
-    all_ts: set[datetime] = set()
+    """Union of all timestamps, forward-filling gaps with previous close.
+
+    Timestamps are normalized to midnight UTC before computing the union so
+    that bars for the same calendar day (but different time components) are
+    treated as a single day.
+    """
+    # Compute sorted union of *normalized* timestamps
+    all_norm: set[datetime] = set()
     for s in series:
-        all_ts.update(s.timestamps)
-    sorted_ts = sorted(all_ts)
+        all_norm.update(_normalize_daily_ts(t) for t in s.timestamps)
+    sorted_ts = sorted(all_norm)
 
     aligned = []
     for s in series:
-        ts_to_bar = {b.timestamp: b for b in s.bars}
+        # Build lookup keyed by normalized timestamp
+        norm_to_bar = {_normalize_daily_ts(b.timestamp): b for b in s.bars}
         new_bars: list[CandleBar] = []
         prev_close: float | None = None
         symbol = s.bars[0].symbol if s.bars else ""
 
         for ts in sorted_ts:
-            bar = ts_to_bar.get(ts)
+            bar = norm_to_bar.get(ts)
             if bar is not None:
+                # Keep original bar data but normalise its timestamp
+                if bar.timestamp != ts:
+                    bar = bar.model_copy(update={"timestamp": ts})
                 new_bars.append(bar)
                 prev_close = bar.close
             elif prev_close is not None:
