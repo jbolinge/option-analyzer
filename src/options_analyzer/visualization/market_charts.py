@@ -639,4 +639,13 @@ def plot_full_grid(
     if rangebreaks:
         fig.update_xaxes(rangebreaks=rangebreaks)
 
+    # Default zoom: last 3 months with fitted Y-axis
+    zoom_bars = min(63, len(closes))
+    fig.update_xaxes(range=[x[-zoom_bars], x[-1]])
+    zoom_lows = lows[-zoom_bars:]
+    zoom_highs = highs[-zoom_bars:]
+    y_min, y_max = float(np.nanmin(zoom_lows)), float(np.nanmax(zoom_highs))
+    y_pad = (y_max - y_min) * 0.02
+    fig.update_yaxes(range=[y_min - y_pad, y_max + y_pad], row=1, col=1)
+
     return apply_theme(fig)
