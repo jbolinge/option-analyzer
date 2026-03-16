@@ -60,13 +60,14 @@ class CandleSeries(BaseModel):
 
 
 def _normalize_daily_ts(ts: datetime) -> datetime:
-    """Normalize a timestamp to midnight UTC (date-only alignment).
+    """Normalize a timestamp to 16:00 UTC (US equity market close).
 
     Daily candle bars represent whole days — the time component is meaningless
-    for alignment.  Normalizing ensures that ``2026-03-14 00:00`` and
-    ``2026-03-14 16:00`` map to the same key.
+    for alignment.  Normalizing to market close ensures that bars from different
+    sources (e.g. ``2026-03-14 00:00`` and ``2026-03-14 16:00``) map to the
+    same key and align correctly with intraday data.
     """
-    return ts.replace(hour=0, minute=0, second=0, microsecond=0)
+    return ts.replace(hour=16, minute=0, second=0, microsecond=0)
 
 
 def align_series(

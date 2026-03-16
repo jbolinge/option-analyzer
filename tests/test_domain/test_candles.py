@@ -233,8 +233,8 @@ class TestAlignSeriesFfill:
         assert len(a2) == 3
         # Day 2 should be filled from day 1's close (100 + 1 = 101)
         filled_bar = a2.bars[1]
-        # Timestamps normalized to midnight by _align_ffill
-        assert filled_bar.timestamp == datetime(2024, 6, 2, 0, 0, tzinfo=UTC)
+        # Timestamps normalized to 16:00 (market close) by _align_ffill
+        assert filled_bar.timestamp == datetime(2024, 6, 2, 16, 0, tzinfo=UTC)
         assert filled_bar.open == 101.0
         assert filled_bar.high == 101.0
         assert filled_bar.low == 101.0
@@ -252,8 +252,8 @@ class TestAlignSeriesFfill:
         assert len(a1) == 6
         assert len(a2) == 6
         assert a1.timestamps == a2.timestamps
-        # Day 6 in s2 filled from day 5 close (timestamps normalized to midnight)
-        assert a2.bars[-1].timestamp == datetime(2024, 6, 6, 0, 0, tzinfo=UTC)
+        # Day 6 in s2 filled from day 5 close (timestamps normalized to 16:00)
+        assert a2.bars[-1].timestamp == datetime(2024, 6, 6, 16, 0, tzinfo=UTC)
         assert a2.bars[-1].close == 105.0  # 100 + 5
         assert a2.bars[-1].volume == 0
 
@@ -268,8 +268,8 @@ class TestAlignSeriesFfill:
         assert len(a1) == 5
         # s2 has no data before day 3, so only days 3,4,5
         assert len(a2) == 3
-        # Timestamps normalized to midnight by _align_ffill
-        assert a2.bars[0].timestamp == datetime(2024, 6, 3, 0, 0, tzinfo=UTC)
+        # Timestamps normalized to 16:00 (market close) by _align_ffill
+        assert a2.bars[0].timestamp == datetime(2024, 6, 3, 16, 0, tzinfo=UTC)
 
     def test_already_aligned_returns_unchanged(self) -> None:
         """Fast path: identical timestamps returns same objects."""
@@ -332,9 +332,9 @@ class TestAlignSeriesMixedTimes:
 
         # All timestamps normalized to midnight
         for bar in a1.bars:
-            assert bar.timestamp.hour == 0
+            assert bar.timestamp.hour == 16
         for bar in a2.bars:
-            assert bar.timestamp.hour == 0
+            assert bar.timestamp.hour == 16
 
     def test_mixed_times_preserves_bar_data(self) -> None:
         """Bars with different times on same day retain original OHLCV data."""
@@ -361,5 +361,5 @@ class TestAlignSeriesMixedTimes:
         a1, a2 = align_series(s1, s2, method="ffill")
 
         for bar in a2.bars:
-            assert bar.timestamp.hour == 0
+            assert bar.timestamp.hour == 16
             assert bar.timestamp.minute == 0
