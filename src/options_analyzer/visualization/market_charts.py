@@ -71,9 +71,11 @@ def plot_ema_cloud(
         row=row, col=col,
     )
 
-    # EMA cloud fill
+    # EMA cloud fill — ensure upper >= lower for reliable fill rendering
+    cloud_upper = np.maximum(result.ema_fast, result.ema_slow)
+    cloud_lower = np.minimum(result.ema_fast, result.ema_slow)
     add_cloud_fill(
-        fig, x, result.ema_fast, result.ema_slow,
+        fig, x, cloud_upper, cloud_lower,
         result.cloud_bullish,
         EMA_CLOUD_PALETTE["cloud_bullish_fill"],
         EMA_CLOUD_PALETTE["cloud_bearish_fill"],
