@@ -100,52 +100,50 @@ def add_cloud_fill(
     row: int,
     col: int,
 ) -> None:
-    """Add NaN-gap segmented cloud fill between two EMA lines.
+    """Add continuous cloud fill between two EMA lines.
 
-    Draws invisible upper/lower scatter lines with ``fill="tonexty"``
-    for bullish and bearish segments separately, using NaN gaps to
-    prevent fill bleeding across regime changes.
+    Uses zero-width collapse instead of NaN gaps: when a regime is
+    inactive, the fill trace collapses to match its reference trace,
+    producing an invisible zero-width fill. This avoids the Plotly
+    rendering issues caused by NaN-gapped ``fill="tonexty"`` traces.
     """
     x_list = list(x)
 
-    bull_upper = np.where(is_bullish == 1.0, upper, np.nan)
-    bull_lower = np.where(is_bullish == 1.0, lower, np.nan)
-    bear_upper = np.where(is_bullish == -1.0, upper, np.nan)
-    bear_lower = np.where(is_bullish == -1.0, lower, np.nan)
+    # Bullish: fill from lower up to upper when bullish, collapse to lower otherwise
+    bull_y = np.where(is_bullish == 1.0, upper, lower)
+    fig.add_trace(
+        go.Scatter(
+            x=x_list, y=lower, mode="lines",
+            line=dict(width=0), showlegend=False, hoverinfo="skip",
+        ),
+        row=row, col=col,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_list, y=bull_y, mode="lines",
+            line=dict(width=0), fill="tonexty",
+            fillcolor=bull_fill, name="Cloud Bull", hoverinfo="skip",
+        ),
+        row=row, col=col,
+    )
 
-    # Bridge transitions so segments connect visually
-    for i in range(1, len(upper)):
-        if np.isnan(upper[i]) or np.isnan(upper[i - 1]):
-            continue
-        prev, curr = is_bullish[i - 1], is_bullish[i]
-        if prev == 1.0 and curr == -1.0:
-            bear_upper[i] = upper[i]
-            bear_lower[i] = lower[i]
-        elif prev == -1.0 and curr == 1.0:
-            bull_upper[i] = upper[i]
-            bull_lower[i] = lower[i]
-
-    for seg_upper, seg_lower, fill_color, name in [
-        (bull_upper, bull_lower, bull_fill, "Cloud Bull"),
-        (bear_upper, bear_lower, bear_fill, "Cloud Bear"),
-    ]:
-        fig.add_trace(
-            go.Scatter(
-                x=x_list, y=seg_lower, mode="lines",
-                line=dict(width=0), showlegend=False,
-                connectgaps=False, hoverinfo="skip",
-            ),
-            row=row, col=col,
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=x_list, y=seg_upper, mode="lines",
-                line=dict(width=0), fill="tonexty",
-                fillcolor=fill_color, name=name,
-                connectgaps=False, hoverinfo="skip",
-            ),
-            row=row, col=col,
-        )
+    # Bearish: fill from upper down to lower when bearish, collapse to upper otherwise
+    bear_y = np.where(is_bullish == -1.0, lower, upper)
+    fig.add_trace(
+        go.Scatter(
+            x=x_list, y=upper, mode="lines",
+            line=dict(width=0), showlegend=False, hoverinfo="skip",
+        ),
+        row=row, col=col,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=x_list, y=bear_y, mode="lines",
+            line=dict(width=0), fill="tonexty",
+            fillcolor=bear_fill, name="Cloud Bear", hoverinfo="skip",
+        ),
+        row=row, col=col,
+    )
 
 
 def add_threshold_colored_line(
