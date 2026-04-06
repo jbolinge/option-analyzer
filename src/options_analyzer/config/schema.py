@@ -24,10 +24,17 @@ class VisualizationConfig(BaseModel):
     theme: str = "bloomberg"
 
 
+class ApiConfig(BaseModel):
+    host: str = "0.0.0.0"
+    port: int = 8000
+    cors_origins: list[str] = ["http://localhost:5173"]
+
+
 class AppConfig(BaseModel):
     provider: ProviderConfig
     engine: EngineConfig = EngineConfig()
     visualization: VisualizationConfig = VisualizationConfig()
+    api: ApiConfig = ApiConfig()
 
     @classmethod
     def from_yaml(cls, path: Path) -> "AppConfig":
