@@ -4,7 +4,7 @@ Options position analyzer with first and second-order Greeks, TastyTrade integra
 
 ## Project Overview
 
-A standalone tool for tracking and visualizing options positions (any multi-leg strategy) with complete Greeks analysis. Uses the TastyTrade API with a provider-agnostic data layer. The initial interface is Jupyter Notebooks, with architecture designed for a future Bloomberg-style web application.
+A standalone tool for tracking and visualizing options positions (any multi-leg strategy) with complete Greeks analysis. Uses the TastyTrade API with a provider-agnostic data layer. Interfaces include Jupyter Notebooks and a Bloomberg-style React web application served by a FastAPI backend.
 
 ## Technology Stack
 
@@ -16,12 +16,17 @@ A standalone tool for tracking and visualizing options positions (any multi-leg 
 - **tastytrade SDK** for brokerage data
 - **pytest + hypothesis** for TDD
 - **jupyterlab** for notebook interface
+- **FastAPI + uvicorn** for web API backend
+- **React 18 + TypeScript** with Vite for web frontend
+- **flexlayout-react** for Bloomberg-style tiling window manager
+- **react-plotly.js** for rendering Plotly figures from backend
+- **TanStack Query + Zustand** for state management
 
 ## Architecture — Hexagonal (Ports & Adapters)
 
 ```
 +---------------------------------------------------+
-|  Presentation (Jupyter / future Dash web app)     |
+|  Presentation (Jupyter / React web app)            |
 +---------------------------------------------------+
 |  Visualization (plotly figures + Bloomberg theme)  |
 +---------------------------------------------------+
@@ -60,6 +65,12 @@ src/options_analyzer/
 │   ├── greeks_calculator.py   # GreeksCalculator wrapping BSM with config defaults
 │   ├── payoff.py              # PayoffCalculator: expiration payoff, theoretical P&L, surfaces
 │   └── position_analyzer.py   # PositionAnalyzer: aggregate Greeks, risk profiles
+├── api/
+│   ├── app.py                 # FastAPI app factory with CORS
+│   ├── dependencies.py        # Shared FastAPI dependencies
+│   ├── routers/               # API route handlers
+│   │   └── health.py          # GET /api/health
+│   └── services/              # Business logic orchestration
 └── visualization/
     ├── theme.py               # Bloomberg dark theme (black bg, orange/cyan, monospace)
     ├── payoff_charts.py       # P&L at expiration, theoretical P&L, 3D surface
@@ -71,10 +82,24 @@ src/options_analyzer/
 tests/
 ├── conftest.py
 ├── factories.py               # Reusable test object builders
+├── test_api/                  # FastAPI endpoint tests
 ├── test_domain/
 ├── test_engine/
 ├── test_adapters/
 └── test_visualization/
+
+frontend/                      # React SPA (Vite + TypeScript)
+├── src/
+│   ├── App.tsx                # Root component
+│   ├── main.tsx               # Entry point
+│   ├── theme/                 # Bloomberg CSS theme
+│   ├── layout/                # FlexLayout shell + tab factory
+│   ├── modules/               # Feature modules (market-conditions, etc.)
+│   ├── components/            # Shared components (PlotlyChart, etc.)
+│   ├── api/                   # API client + types
+│   └── stores/                # Zustand UI state
+├── vite.config.ts             # Build + dev proxy + vitest config
+└── package.json
 
 notebooks/
 ├── 01_connect_and_explore.ipynb
@@ -137,6 +162,23 @@ uv run ruff check src/
 
 # Jupyter notebooks
 uv run jupyter lab
+
+# --- Web Frontend ---
+
+# Start backend API server (development)
+uv run uvicorn options_analyzer.api.app:app --reload
+
+# Start frontend dev server (in separate terminal)
+cd frontend && npm run dev
+
+# Run frontend tests
+cd frontend && npm test
+
+# Build frontend for production
+cd frontend && npm run build
+
+# Run all backend tests (skip integration)
+uv run pytest -m "not integration"
 ```
 
 ## Configuration
@@ -190,22 +232,33 @@ visualization:
 
 ## Dependencies
 
-### Core
+### Core (Python)
 - pydantic>=2.0
 - numpy>=1.26
 - scipy>=1.12
 - plotly>=5.18
 - pyyaml>=6.0
-- tastytrade>=11.1
+- tastytrade>=12.0.2
 - python-dotenv>=1.0
+- fastapi>=0.115
+- uvicorn[standard]>=0.30
 
-### Dev
+### Dev (Python)
 - pytest>=8.0
 - pytest-asyncio>=0.23
 - pytest-cov
 - hypothesis>=6.0
+- httpx>=0.27
 - ruff
 - mypy
+
+### Frontend (npm — see frontend/package.json)
+- react, react-dom
+- flexlayout-react
+- react-plotly.js + plotly.js-cartesian-dist
+- @tanstack/react-query
+- zustand
+- vitest + @testing-library/react (dev)
 
 ### Jupyter (optional group)
 - jupyterlab>=4.0
