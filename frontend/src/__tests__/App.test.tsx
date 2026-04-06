@@ -13,18 +13,22 @@ vi.mock('flexlayout-react', () => ({
   },
 }))
 
-// Must import App after mocks are set up
 import App from '../App'
 
 describe('App', () => {
-  it('renders without crashing', () => {
+  it('renders the layout shell in normal mode', () => {
     render(<App />)
-    // FlexLayout mock renders
+    // LayoutShell renders the status bar with app title
+    expect(screen.getByText('OPTIONS ANALYZER')).toBeInTheDocument()
+  })
+
+  it('renders FlexLayout', () => {
+    render(<App />)
     expect(screen.getByTestId('flexlayout')).toBeInTheDocument()
   })
 
-  it('renders the layout shell', () => {
+  it('shows reset layout button', () => {
     render(<App />)
-    expect(screen.getByText('FlexLayout Mock')).toBeInTheDocument()
+    expect(screen.getByTestId('reset-layout')).toBeInTheDocument()
   })
 })
