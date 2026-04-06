@@ -1,0 +1,10 @@
+{
+  "id": "api-market_20260405",
+  "title": "Backend Market Conditions API",
+  "type": "feature",
+  "status": "complete",
+  "created": "2026-04-05",
+  "updated": "2026-04-05",
+  "phases": { "total": 2, "completed": 2 },
+  "tasks": { "total": 10, "completed": 10 }
+}
