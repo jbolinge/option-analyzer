@@ -1,0 +1,10 @@
+{
+  "id": "production_20260405",
+  "title": "SPA Serving + Production Polish",
+  "type": "feature",
+  "status": "complete",
+  "created": "2026-04-05",
+  "updated": "2026-04-05",
+  "phases": { "total": 2, "completed": 2 },
+  "tasks": { "total": 8, "completed": 8 }
+}
