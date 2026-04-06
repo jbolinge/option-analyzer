@@ -1,0 +1,100 @@
+/*
+ * FlexLayout Bloomberg Dark Theme Overrides
+ *
+ * Overrides flexlayout-react's dark.css variables with Bloomberg palette.
+ * Import AFTER flexlayout's dark.css.
+ */
+
+.flexlayout__layout {
+  /* Backgrounds */
+  --color-text: var(--bb-text-primary);
+  --color-background: var(--bb-bg-paper);
+  --color-base: var(--bb-bg-paper);
+  --color-1: var(--bb-bg-surface);
+  --color-2: var(--bb-bg-panel);
+  --color-3: var(--bb-bg-plot);
+  --color-4: var(--bb-grid);
+  --color-5: #444466;
+  --color-6: #555577;
+
+  /* Typography */
+  --font-size: var(--bb-font-size-sm);
+  --font-family: var(--bb-font-mono);
+
+  /* Tab strip */
+  --color-tabset-background: var(--bb-bg-surface);
+  --color-tabset-background-selected: var(--bb-bg-surface);
+  --color-tabset-background-maximized: var(--bb-bg-panel);
+  --color-tabset-divider-line: var(--bb-grid);
+  --color-tabset-header-background: var(--bb-bg-surface);
+  --color-tabset-header: var(--bb-text-primary);
+
+  /* Tab content area */
+  --color-tab-content: var(--bb-bg-paper);
+  --color-border-tab-content: var(--bb-bg-paper);
+
+  /* Selected tab */
+  --color-tab-selected: var(--bb-text-primary);
+  --color-tab-selected-background: var(--bb-bg-plot);
+
+  /* Unselected tab */
+  --color-tab-unselected: var(--bb-text-secondary);
+  --color-tab-unselected-background: transparent;
+
+  /* Splitters */
+  --color-splitter: var(--bb-bg-panel);
+  --color-splitter-hover: var(--bb-grid);
+  --color-splitter-drag: var(--bb-primary);
+
+  /* Borders */
+  --color-border-background: var(--bb-bg-surface);
+  --color-border-divider-line: var(--bb-grid);
+  --color-border-tab-selected: var(--bb-text-primary);
+  --color-border-tab-selected-background: var(--bb-bg-plot);
+  --color-border-tab-unselected: var(--bb-text-secondary);
+  --color-border-tab-unselected-background: var(--bb-bg-panel);
+
+  /* Drag feedback */
+  --color-drag1: var(--bb-primary);
+  --color-drag2: var(--bb-secondary);
+  --color-drag-rect-border: var(--bb-primary);
+  --color-drag-rect-background: var(--bb-bg-surface);
+  --color-drag-rect: var(--bb-text-primary);
+
+  /* Popup menu */
+  --color-popup-border: var(--bb-grid);
+  --color-popup-unselected: var(--bb-text-primary);
+  --color-popup-unselected-background: var(--bb-bg-surface);
+  --color-popup-selected: var(--bb-text-primary);
+  --color-popup-selected-background: var(--bb-bg-plot);
+
+  /* Icons and overflow */
+  --color-overflow: var(--bb-text-secondary);
+  --color-icon: var(--bb-text-secondary);
+  --color-edge-marker: var(--bb-neutral);
+  --color-toolbar-button-hover: var(--bb-grid);
+}
+
+/* Active tab orange accent underline */
+.flexlayout__tabset_tabbar_inner_tab_container_top {
+  border-top: 2px solid transparent;
+}
+
+.flexlayout__tab_button--selected {
+  border-top: 2px solid var(--bb-primary);
+  margin-top: -2px;
+}
+
+/* Remove dark theme gradient overlays — flat Bloomberg style */
+.flexlayout__tabset-selected {
+  background-image: none;
+}
+
+.flexlayout__tabset-maximized {
+  background-image: none;
+}
+
+/* Toolbar buttons — orange on hover */
+.flexlayout__tab_toolbar_button:hover svg {
+  color: var(--bb-primary);
+}

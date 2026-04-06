@@ -1,0 +1,64 @@
+/*
+ * Global reset and Bloomberg base styles.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bb-bg-paper);
+  color: var(--bb-text-primary);
+  font-family: var(--bb-font-mono);
+  font-size: var(--bb-font-size-base);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar — Bloomberg dark style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bb-bg-paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bb-grid);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bb-neutral);
+}
+
+/* Selection */
+::selection {
+  background: var(--bb-primary);
+  color: var(--bb-bg-paper);
+}
+
+/* Links */
+a {
+  color: var(--bb-secondary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--bb-primary);
+}

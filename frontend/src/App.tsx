@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import './theme/bloomberg.css'
+import './theme/global.css'
 
 interface HealthResponse {
   status: string

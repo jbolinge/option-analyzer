@@ -1,0 +1,85 @@
+/*
+ * Bloomberg Dark Theme — CSS Custom Properties
+ *
+ * Authoritative source: src/options_analyzer/visualization/theme.py
+ * Keep in sync with PALETTE, BLOOMBERG_TEMPLATE, and specialized palettes.
+ */
+
+:root {
+  /* --- Core Palette (theme.py PALETTE) --- */
+  --bb-primary: #ff6600;
+  --bb-secondary: #00cccc;
+  --bb-tertiary: #cc00cc;
+  --bb-positive: #00cc66;
+  --bb-negative: #cc3333;
+  --bb-neutral: #888888;
+
+  /* --- Backgrounds (BLOOMBERG_TEMPLATE) --- */
+  --bb-bg-paper: #000000;
+  --bb-bg-plot: #1a1a2e;
+  --bb-bg-surface: #0d0d1a;
+  --bb-bg-panel: #111122;
+
+  /* --- Grid & Borders (GRID_COLOR) --- */
+  --bb-grid: #2d2d44;
+  --bb-border: #2d2d44;
+  --bb-border-active: #ff6600;
+
+  /* --- Text (_TEXT_COLOR, _FONT_FAMILY) --- */
+  --bb-text-primary: #e0e0e0;
+  --bb-text-secondary: #888888;
+  --bb-text-accent: #ff6600;
+  --bb-text-muted: #555555;
+
+  /* --- Typography --- */
+  --bb-font-mono: Consolas, Monaco, 'Courier New', monospace;
+  --bb-font-size-xs: 10px;
+  --bb-font-size-sm: 11px;
+  --bb-font-size-base: 12px;
+  --bb-font-size-lg: 14px;
+  --bb-font-size-xl: 16px;
+
+  /* --- Spacing --- */
+  --bb-space-xs: 2px;
+  --bb-space-sm: 4px;
+  --bb-space-md: 8px;
+  --bb-space-lg: 16px;
+  --bb-space-xl: 24px;
+
+  /* --- Line Widths (LINE_WIDTH, REFERENCE_LINE_WIDTH) --- */
+  --bb-line-width: 2px;
+  --bb-line-width-ref: 1px;
+
+  /* --- DSTFS Palette --- */
+  --bb-dstfs-sma-rising: #00cc66;
+  --bb-dstfs-sma-falling: #cc3333;
+  --bb-dstfs-hma-rising: #00cccc;
+  --bb-dstfs-hma-falling: #cc00cc;
+  --bb-dstfs-candle-up: #00cc66;
+  --bb-dstfs-candle-down: #cc3333;
+
+  /* --- EMA Cloud Palette --- */
+  --bb-ema-fast: #ff6600;
+  --bb-ema-slow: #00cccc;
+  --bb-ema-cloud-bullish: rgba(0, 204, 102, 0.3);
+  --bb-ema-cloud-bearish: rgba(204, 51, 51, 0.3);
+
+  /* --- IVTS Palette --- */
+  --bb-ivts-green: #00cc66;
+  --bb-ivts-yellow: #ffff00;
+  --bb-ivts-fuchsia: #cc00cc;
+  --bb-ivts-red: #cc3333;
+
+  /* --- MC Warnings Palette --- */
+  --bb-mc-white: #ffffff;
+  --bb-mc-green: #00cc66;
+  --bb-mc-aqua: #00cccc;
+  --bb-mc-fuchsia: #cc00cc;
+  --bb-mc-red: #cc3333;
+  --bb-mc-yellow: #ffff00;
+
+  /* --- Borg Palette --- */
+  --bb-borg-bullish: #00cc66;
+  --bb-borg-mixed: #00cccc;
+  --bb-borg-bearish: #cc3333;
+}
