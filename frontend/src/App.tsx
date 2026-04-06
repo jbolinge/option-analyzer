@@ -1,37 +1,26 @@
-import { useEffect, useState } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './theme/bloomberg.css'
 import './theme/global.css'
 
-interface HealthResponse {
-  status: string
-  api_version: string
-}
+// Import all module registrations (side-effect imports)
+import './modules/market-conditions'
+
+import LayoutShell from './layout/LayoutShell'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity, // Manual refresh only
+      retry: 1,
+    },
+  },
+})
 
 function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then(setHealth)
-      .catch((err) => setError(err.message))
-  }, [])
-
   return (
-    <div data-testid="app-root">
-      <h1>options-analyzer</h1>
-      {error && <p data-testid="error">API Error: {error}</p>}
-      {health && (
-        <p data-testid="health-status">
-          API: {health.status} (v{health.api_version})
-        </p>
-      )}
-      {!health && !error && <p data-testid="loading">Connecting...</p>}
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <LayoutShell />
+    </QueryClientProvider>
   )
 }
 
