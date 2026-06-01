@@ -657,7 +657,15 @@ def plot_full_grid(
         start_idx = next(
             (i for i, t in enumerate(x) if t >= cutoff), len(closes) - 1
         )
-    fig.update_xaxes(range=[x[start_idx], x[-1]])
+    # Pad the right edge by half a bar so the most recent candle/markers
+    # (the current day — the focal point of the dashboard) aren't clipped at
+    # the axis boundary. Keep the pad below one bar so it never lands inside a
+    # weekend/holiday rangebreak.
+    if isinstance(x[-1], datetime):
+        right_edge: Any = x[-1] + timedelta(hours=12)
+    else:
+        right_edge = x[-1] + 0.5
+    fig.update_xaxes(range=[x[start_idx], right_edge])
     zoom_lows = lows[start_idx:]
     zoom_highs = highs[start_idx:]
     y_min, y_max = float(np.nanmin(zoom_lows)), float(np.nanmax(zoom_highs))

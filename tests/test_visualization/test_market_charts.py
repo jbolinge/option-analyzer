@@ -394,3 +394,9 @@ class TestPlotFullGridZoom:
         default_start = self._plot().layout.xaxis.range[0]
         zoom_start = self._plot(zoom_days=90).layout.xaxis.range[0]
         assert zoom_start != default_start
+
+    def test_right_edge_padded_past_last_bar(self) -> None:
+        """Current day must not be clipped: right edge sits past the last bar."""
+        fig = self._plot(zoom_days=90)
+        x_end = fig.layout.xaxis.range[1]
+        assert x_end > self.timestamps[-1]
