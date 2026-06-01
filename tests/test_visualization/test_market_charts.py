@@ -25,6 +25,7 @@ from options_analyzer.visualization.market_charts import (
 )
 from options_analyzer.visualization.theme import BLOOMBERG_TEMPLATE
 from tests.factories import (
+    make_candle_series,
     make_multi_ticker_closes,
     make_ohlcv_arrays,
     make_vix_arrays,
@@ -354,3 +355,42 @@ class TestPlotFullGrid:
         bar_traces = [t for t in fig.data if isinstance(t, go.Bar)]
         # At least 2: MC totals + Borg transwarp
         assert len(bar_traces) >= 2
+
+
+class TestPlotFullGridZoom:
+    """Default x-axis zoom window behavior (zoom_days vs the 63-bar default)."""
+
+    def setup_method(self) -> None:
+        self.td = _make_test_data()
+        self.data = self.td["data"]
+        # Daily timestamps aligned to the 200-bar test data.
+        self.timestamps = make_candle_series(n=200, seed=42).timestamps
+
+    def _plot(self, **kwargs: object) -> go.Figure:
+        return plot_full_grid(
+            self.td["ema_cloud"], self.td["dstfs"], self.td["mc"],
+            self.td["ivts"], self.td["borg"],
+            self.data["open"], self.data["high"],
+            self.data["low"], self.data["close"],
+            timestamps=self.timestamps,
+            **kwargs,
+        )
+
+    def test_zoom_days_window_starts_within_n_days(self) -> None:
+        fig = self._plot(zoom_days=90)
+        x_start, x_end = fig.layout.xaxis.range
+        span_days = (x_end - x_start).days
+        # Daily bars over ~90 calendar days: start is within the window and
+        # close to the requested span (not the full 200-bar history).
+        assert 80 <= span_days <= 90
+
+    def test_default_uses_63_bar_window(self) -> None:
+        fig = self._plot()
+        x_start = fig.layout.xaxis.range[0]
+        # 63 trading bars back from the last timestamp (daily test data).
+        assert x_start == self.timestamps[-63]
+
+    def test_zoom_days_changes_start_vs_default(self) -> None:
+        default_start = self._plot().layout.xaxis.range[0]
+        zoom_start = self._plot(zoom_days=90).layout.xaxis.range[0]
+        assert zoom_start != default_start

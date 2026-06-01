@@ -14,7 +14,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.96.2",
     "flexlayout-react": "^0.8.19",
-    "plotly.js-cartesian-dist": "^3.5.0",
+    "plotly.js": "^3.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-plotly.js": "^2.6.0",

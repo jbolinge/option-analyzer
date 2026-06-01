@@ -30,11 +30,22 @@ class ApiConfig(BaseModel):
     cors_origins: list[str] = ["http://localhost:5173"]
 
 
+class ReportConfig(BaseModel):
+    """Settings for generated report artifacts (e.g. the market-outlook PDF).
+
+    ``output_dir`` is the default save location for generated files. A relative
+    path is resolved against the project root; an absolute path is used as-is.
+    """
+
+    output_dir: str = "reports"
+
+
 class AppConfig(BaseModel):
     provider: ProviderConfig
     engine: EngineConfig = EngineConfig()
     visualization: VisualizationConfig = VisualizationConfig()
     api: ApiConfig = ApiConfig()
+    reports: ReportConfig = ReportConfig()
 
     @classmethod
     def from_yaml(cls, path: Path) -> "AppConfig":

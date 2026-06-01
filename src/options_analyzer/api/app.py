@@ -16,7 +16,8 @@ from options_analyzer.api.routers.market_conditions import (
 )
 
 # Frontend build output — relative to project root
-_FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "dist"
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_FRONTEND_DIST = _PROJECT_ROOT / "frontend" / "dist"
 
 
 def create_app(

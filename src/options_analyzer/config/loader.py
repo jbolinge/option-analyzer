@@ -45,7 +45,7 @@ def _resolve_string(value: str) -> str:
     return _ENV_VAR_PATTERN.sub(_replacer, value)
 
 
-def _find_project_root() -> Path:
+def find_project_root() -> Path:
     """Walk up from cwd looking for ``pyproject.toml``."""
     current = Path.cwd().resolve()
     for directory in (current, *current.parents):
@@ -54,6 +54,10 @@ def _find_project_root() -> Path:
     raise FileNotFoundError(
         "Could not find project root (no pyproject.toml in parent directories)"
     )
+
+
+# Backwards-compatible private alias.
+_find_project_root = find_project_root
 
 
 def load_config(

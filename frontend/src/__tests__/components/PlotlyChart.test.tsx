@@ -1,10 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 
-// Mock react-plotly.js factory and plotly.js-cartesian-dist
+// Mock react-plotly.js factory and custom plotly bundle
 vi.mock('react-plotly.js/factory', () => ({
   default: () => {
-    // Return a mock Plot component
     return function MockPlot(props: any) {
       return (
         <div data-testid="plotly-chart" data-traces={props.data?.length ?? 0}>
@@ -15,7 +14,7 @@ vi.mock('react-plotly.js/factory', () => ({
   },
 }))
 
-vi.mock('plotly.js-cartesian-dist', () => ({
+vi.mock('../../lib/plotly-custom', () => ({
   default: { Plots: { resize: vi.fn() } },
 }))
 

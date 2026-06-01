@@ -1,9 +1,14 @@
 import { useRef, useEffect, useCallback } from 'react'
 import createPlotlyComponent from 'react-plotly.js/factory'
-import Plotly from 'plotly.js-cartesian-dist'
+import Plotly from '../lib/plotly-custom'
 import type { PlotlyFigure } from '../api/types'
 
-const Plot = createPlotlyComponent(Plotly)
+// Handle CJS/ESM interop — factory may be on .default or the import itself
+const createPlot =
+  typeof createPlotlyComponent === 'function'
+    ? createPlotlyComponent
+    : (createPlotlyComponent as any).default
+const Plot = createPlot(Plotly)
 
 interface PlotlyChartProps {
   figure: PlotlyFigure | undefined

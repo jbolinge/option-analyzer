@@ -43,6 +43,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Generated reports (market-outlook PDFs)
+/reports/
+
 # Environment / Secrets
 .env
 .env.*

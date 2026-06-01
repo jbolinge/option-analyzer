@@ -10,7 +10,7 @@ vi.mock('react-plotly.js/factory', () => ({
       return <div data-testid="plotly-chart">Chart</div>
     },
 }))
-vi.mock('plotly.js-cartesian-dist', () => ({
+vi.mock('../../lib/plotly-custom', () => ({
   default: { Plots: { resize: vi.fn() } },
 }))
 

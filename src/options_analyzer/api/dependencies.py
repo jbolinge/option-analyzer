@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import cast
 
 from fastapi import FastAPI, Request
 
@@ -25,9 +26,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 def get_providers(request: Request) -> ProviderContext:
     """FastAPI dependency — returns the shared ProviderContext."""
-    return request.app.state.providers
+    return cast(ProviderContext, request.app.state.providers)
 
 
 def get_config(request: Request) -> AppConfig:
     """FastAPI dependency — returns the application config."""
-    return request.app.state.config
+    return cast(AppConfig, request.app.state.config)

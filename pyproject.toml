@@ -19,7 +19,11 @@ dependencies = [
     "yfinance>=0.2",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
+    "kaleido",
 ]
+
+[project.scripts]
+market-outlook = "options_analyzer.cli.market_outlook:main"
 
 [project.optional-dependencies]
 jupyter = [

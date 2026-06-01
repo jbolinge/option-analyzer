@@ -268,7 +268,7 @@ class TastyTradeMarketDataProvider(MarketDataProvider):
         interval: str = "1d",
         days_back: int = 365,
     ) -> dict[str, CandleSeries]:
-        """Fetch candles for multiple symbols concurrently, aligned to common timestamps."""
+        """Fetch candles for many symbols concurrently, aligned to common bars."""
         tasks = {
             sym: asyncio.create_task(self.get_candles(sym, interval, days_back))
             for sym in symbols

@@ -179,6 +179,16 @@ cd frontend && npm run build
 
 # Run all backend tests (skip integration)
 uv run pytest -m "not integration"
+
+# --- CLI ---
+
+# Generate the daily SPX Market Conditions Dashboard PDF (default view: last 90 days).
+# Saves to config `reports.output_dir` (default ./reports/) as {date}-daily-market-conditions.pdf
+uv run market-outlook
+
+# Override the save location (a directory, or an explicit .pdf path)
+uv run market-outlook -o /path/to/dir
+uv run market-outlook -o /path/to/report.pdf
 ```
 
 ## Configuration

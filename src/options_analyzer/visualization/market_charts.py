@@ -7,6 +7,7 @@ for the complete 6-panel composite. All use Bloomberg dark theme.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime, timedelta
 from typing import Any
 
 import numpy as np
@@ -590,8 +591,14 @@ def plot_full_grid(
     closes: npt.NDArray[np.float64],
     timestamps: Sequence[Any] | None = None,
     title: str = "Market Conditions Dashboard",
+    zoom_days: int | None = None,
 ) -> go.Figure:
-    """Assemble all 5 panels into a single vertically-stacked figure."""
+    """Assemble all 5 panels into a single vertically-stacked figure.
+
+    ``zoom_days`` controls the default x-axis window. When ``None`` (default),
+    the view fits the last 63 trading bars (~3 months). When set, and datetime
+    timestamps are available, the view fits the last ``zoom_days`` calendar days.
+    """
     fig = make_subplots(
         rows=5, cols=1, shared_xaxes=True,
         row_heights=[0.50, 0.12, 0.08, 0.14, 0.16],
@@ -639,11 +646,20 @@ def plot_full_grid(
     if rangebreaks:
         fig.update_xaxes(rangebreaks=rangebreaks)
 
-    # Default zoom: last 3 months with fitted Y-axis
-    zoom_bars = min(63, len(closes))
-    fig.update_xaxes(range=[x[-zoom_bars], x[-1]])
-    zoom_lows = lows[-zoom_bars:]
-    zoom_highs = highs[-zoom_bars:]
+    # Default zoom: last `zoom_days` calendar days, or last ~3 months (63 bars)
+    start_idx = len(closes) - min(63, len(closes))
+    if (
+        zoom_days is not None
+        and len(x) > 0
+        and isinstance(x[-1], datetime)
+    ):
+        cutoff = x[-1] - timedelta(days=zoom_days)
+        start_idx = next(
+            (i for i, t in enumerate(x) if t >= cutoff), len(closes) - 1
+        )
+    fig.update_xaxes(range=[x[start_idx], x[-1]])
+    zoom_lows = lows[start_idx:]
+    zoom_highs = highs[start_idx:]
     y_min, y_max = float(np.nanmin(zoom_lows)), float(np.nanmax(zoom_highs))
     y_pad = (y_max - y_min) * 0.02
     fig.update_yaxes(range=[y_min - y_pad, y_max + y_pad], row=1, col=1)

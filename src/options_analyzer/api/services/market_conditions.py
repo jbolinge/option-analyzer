@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import plotly.graph_objects as go
 
 from options_analyzer.engine.atr_bollinger import compute_atr_bollinger
 from options_analyzer.engine.borg_transwarp import (
@@ -31,13 +34,15 @@ from options_analyzer.visualization.market_charts import (
 _ALL_SYMBOLS = list(dict.fromkeys(BORG_TICKERS + ["SPX", "VIX", "VIX3M"]))
 
 
-async def compute_dashboard(
+async def build_dashboard_figure(
     market_data: MarketDataProvider,
     days_back: int = 1500,
-) -> dict[str, Any]:
-    """Fetch candles, compute all indicators, return full grid figure JSON.
+    zoom_days: int | None = None,
+) -> go.Figure:
+    """Fetch candles, compute all indicators, return the full grid figure.
 
-    Returns dict with keys: figure, computed_at, symbol.
+    ``zoom_days`` sets the default x-axis window (last N calendar days); when
+    ``None`` the chart keeps its built-in ~3-month (63-bar) default zoom.
     """
     candle_data = await market_data.get_candles_batch(
         _ALL_SYMBOLS, interval="1d", days_back=days_back
@@ -70,7 +75,7 @@ async def compute_dashboard(
     borg_results = compute_borg_transwarp_series(borg_closes)
 
     # Plot full grid
-    fig = plot_full_grid(
+    return plot_full_grid(
         ema_cloud_result=ema_result,
         dstfs_result=dstfs_spy,
         mc_result=mc_result,
@@ -82,7 +87,19 @@ async def compute_dashboard(
         closes=spx.closes,
         timestamps=spx.timestamps,
         title="SPX — Market Conditions Dashboard (Daily)",
+        zoom_days=zoom_days,
     )
+
+
+async def compute_dashboard(
+    market_data: MarketDataProvider,
+    days_back: int = 1500,
+) -> dict[str, Any]:
+    """Fetch candles, compute all indicators, return full grid figure JSON.
+
+    Returns dict with keys: figure, computed_at, symbol.
+    """
+    fig = await build_dashboard_figure(market_data, days_back=days_back)
 
     return {
         "figure": fig.to_plotly_json(),
